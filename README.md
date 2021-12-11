@@ -4,6 +4,9 @@ A collection of Blender Python functions and classes for frequent tasks, current
 - **deleting objects**
 - **dealing with Collections**
 - **tagging Vertices** (a.k.a. being able to track them even after their indices changed)
+- **create an applied duplicate of a mesh** (a.k.a. The mesh if you would apply every shapekey, modifier etc. to it)
+    - not yet properly tested
+- more might follow
 
 
 

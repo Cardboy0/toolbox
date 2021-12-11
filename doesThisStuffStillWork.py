@@ -269,9 +269,22 @@ def test_tagVertices():
     return True
 
 
+# createRealMesh.py
+def test_createRealMesh():
+    try:
+        import createRealMesh
+        #createRealMesh = bpy.data.texts["createRealMesh.py"].as_module()
+    except:
+        print("COULDNT IMPORT createRealMesh")
+        return False
+    messStuffUp()
+    print("attention, createRealMesh doesn't have any testing implemented yet.")
+    return True
+
+
 x = True
 # fun as in function, not the joy I haven't experienced since attending highschool
-for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection):
+for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh):
     print("\n\n")
     if fun() == True:
         None
