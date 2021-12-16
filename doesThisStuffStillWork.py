@@ -6,6 +6,7 @@
 
 import bpy
 import math
+import mathutils
 C = bpy.context
 D = bpy.data
 
@@ -19,7 +20,7 @@ D = bpy.data
 C.scene.frame_set(100)
 bpy.ops.mesh.primitive_cube_add()
 cube = C.object
-print("\n\nStart of new test run\n\n")
+print("\n\n"*3+"*"*200+"\nStart of new test run\n\n")
 
 
 # changes some stuff, such as switching to different frames, to make sure our results get "updated" properly
@@ -67,14 +68,14 @@ def test_selectObjects():
         return False
 
 
-# deleteObjectAndMesh.py
+# deleteStuff.py
 def test_deleteObjectAndMesh():
     try:
-        # import deleteObjectAndMesh
-        deleteObjectAndMesh = bpy.data.texts["deleteObjectAndMesh.py"].as_module(
+        # import deleteStuff
+        deleteStuff = bpy.data.texts["deleteStuff.py"].as_module(
         )
     except:
-        print("COULDNT IMPORT deleteObjectAndMesh")
+        print("COULDN'T IMPORT deleteStuff")
         return False
     messStuffUp()
     bpy.ops.mesh.primitive_ico_sphere_add()
@@ -84,7 +85,7 @@ def test_deleteObjectAndMesh():
     mesh = D.meshes["kl152592"]
     objs = len(D.objects)
     meshes = len(D.meshes)
-    deleteObjectAndMesh.deleteObjectAndMesh(C.object)
+    deleteStuff.deleteObjectAndMesh(C.object)
     if objs-1 == len(D.objects) and meshes-1 == len(D.meshes) and D.objects.find("kl152592") == -1 and D.meshes.find("kl152592") == -1:
         return True
     else:
@@ -182,7 +183,7 @@ def test_tagVertices():
         tagVertices = bpy.data.texts["tagVertices.py"].as_module(
         )
     except:
-        print("COULDNT IMPORT tagVertices")
+        print("COULDN'T IMPORT tagVertices")
         return False
     messStuffUp()
     bpy.ops.mesh.primitive_plane_add()
@@ -272,25 +273,163 @@ def test_tagVertices():
 # createRealMesh.py
 def test_createRealMesh():
     try:
-        import createRealMesh
-        #createRealMesh = bpy.data.texts["createRealMesh.py"].as_module()
+        #import createRealMesh
+        createRealMesh = bpy.data.texts["createRealMesh.py"].as_module()
     except:
-        print("COULDNT IMPORT createRealMesh")
+        print("COULDN'T IMPORT createRealMesh")
         return False
     messStuffUp()
     print("attention, createRealMesh doesn't have any testing implemented yet.")
     return True
 
+# deleteStuff.py
+
+
+def test_delete_VertsFacesEdges():
+    try:
+        #import deleteStuff
+        deleteStuff = bpy.data.texts["deleteStuff.py"].as_module()
+    except:
+        print("COULDN'T IMPORT deleteStuff")
+        return False
+
+    def newPlane():
+        bpy.ops.mesh.primitive_plane_add()
+        obj = C.object
+        obj.name = "testDeletionPlane_1"
+        mesh = obj.data
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.subdivide()
+        bpy.ops.mesh.subdivide()
+        bpy.ops.mesh.subdivide()
+        bpy.ops.object.mode_set(mode='OBJECT')
+        messStuffUp()
+        return mesh
+
+    # test if vectors are approx. the same while allowing some precision offset
+    def vectorMatch(v1, v2):
+        if math.isclose((v1-v2).length, 0, abs_tol=0.01):
+            return True
+        else:
+            return False
+
+    def findEdgeFromCoordinates(co1, co2, mesh):
+        co1 = mathutils.Vector(co1)
+        co2 = mathutils.Vector(co2)
+        for edge in mesh.edges:
+            edgeVert1 = mesh.vertices[edge.vertices[0]]
+            edgeVert2 = mesh.vertices[edge.vertices[1]]
+            if vectorMatch(edgeVert1.co, co1) or vectorMatch(edgeVert1.co, co2):
+                if vectorMatch(edgeVert2.co, co1) or vectorMatch(edgeVert2.co, co2):
+                    return edge.index
+        return -1  # when no match was found
+
+    def findFaceFromCoordinates(center_co, mesh):
+        center_co = mathutils.Vector(center_co)
+        for face in mesh.polygons:
+            if vectorMatch(center_co, face.center):
+                return face.index
+        return -1
+
+    def findVertexFromCoordinates(co, mesh):
+        co = mathutils.Vector(co)
+        for vert in mesh.vertices:
+            if vectorMatch(vert.co, co):
+                return vert.index
+        return -1
+
+    # We do this test with a plane that's been subdivided three times.
+    # this plane has 81 verts, 144 edges and 64 faces
+    # in the following tests, we check if the assumed amount of verts/edges/faces gets deleted
+    # the actual indices we give for deletion are only two each time
+    # To make things easier, we create a new plane for each "run"
+    # To make things more complicated, we identify/compare edges/verts/faces by their coordinates
+
+    # 2 Edges (identified by their two vert coordinates)
+    edges = [((-0.25, 0.25, 0.0), (-0.25, 0.5, 0.0)),  # 92
+             ((0.5, -0.5, 0.0), (0.5, -0.25, 0.0))]  # 64
+    # 2. Faces (center coordinate)
+    faces = [(0.375, -0.125, 0.0), (-0.625, 0.375, 0.0)]  # 4, 11
+    # 3. Vertices
+    vertices = [(0.5, 0.25, 0.0), (-0.5, -0.25, 0.0)]  # 62, 53
+    # 4. Another Face (center coordinate)
+    totalVerts = 81
+    totalEdges = 144
+    totalFaces = 64
+
+    # To be able to do this test stuff in a loop, we create dictionaries for each run
+    vertInformationONE = {"type": "VERTEX", "coordinatesToDelete": vertices, "deleteChildElements": False, "expectedResults": {
+        "verts": totalVerts-2, "edges": totalEdges-8, "faces": totalFaces-8}}
+    edgeInformationONE = {"type": "EDGE", "coordinatesToDelete": edges, "deleteChildElements": False, "expectedResults": {
+        "verts": totalVerts-0, "edges": totalEdges-2, "faces": totalFaces-4}}
+    edgeInformationTWO = {"type": "EDGE", "coordinatesToDelete": edges, "deleteChildElements": True, "expectedResults": {
+        "verts": totalVerts-4, "edges": totalEdges-14, "faces": totalFaces-12}}
+    faceInformationONE = {"type": "FACE", "coordinatesToDelete": faces, "deleteChildElements": False, "expectedResults": {
+        "verts": totalVerts-0, "edges": totalEdges-0, "faces": totalFaces-2}}
+    faceInformationTWO = {"type": "FACE", "coordinatesToDelete": faces, "deleteChildElements": True, "expectedResults": {
+        "verts": totalVerts-8, "edges": totalEdges-24, "faces": totalFaces-18}}
+
+    for specificDict in [vertInformationONE, edgeInformationONE, edgeInformationTWO, faceInformationONE, faceInformationTWO]:
+        messStuffUp()
+        mesh = newPlane()
+        # getting the indices of the elements
+        indices = []
+        for something in specificDict["coordinatesToDelete"]:
+            if specificDict["type"] == "VERTEX":
+                indices.append(findVertexFromCoordinates(something, mesh))
+            elif specificDict["type"] == "EDGE":
+                indices.append(findEdgeFromCoordinates(
+                    something[0], something[1], mesh))
+            elif specificDict["type"] == "FACE":
+                indices.append(findFaceFromCoordinates(something, mesh))
+
+        deleteStuff.delete_VertsFacesEdges(
+            C, mesh, indices, specificDict["type"], specificDict["deleteChildElements"])
+        messStuffUp()
+
+        if len(mesh.vertices) != specificDict["expectedResults"]["verts"] or len(mesh.edges) != specificDict["expectedResults"]["edges"] or len(mesh.polygons) != specificDict["expectedResults"]["faces"]:
+            print("\nError: see data below")
+            print("parameters:  " + specificDict["type"] + ", " +
+                  str(specificDict["deleteChildElements"])+"\n")
+            print("expected / actualResult")
+            print(
+                "verts: "+str(specificDict["expectedResults"]["verts"])+"/"+str(len(mesh.vertices)))
+            print(
+                "edges: "+str(specificDict["expectedResults"]["edges"])+"/"+str(len(mesh.edges)))
+            print(
+                "faces: "+str(specificDict["expectedResults"]["faces"])+"/"+str(len(mesh.polygons)))
+            print("\nmesh name: "+mesh.name)
+
+            return False
+
+        # check if the elements we wanted to delete really have been deleted
+        for something in specificDict["coordinatesToDelete"]:
+            if specificDict["type"] == "VERTEX":
+                index = findVertexFromCoordinates(something, mesh)
+            elif specificDict["type"] == "EDGE":
+                index = findEdgeFromCoordinates(
+                    something[0], something[1], mesh)
+            elif specificDict["type"] == "FACE":
+                index = findFaceFromCoordinates(something, mesh)
+
+            if index != -1:  # no element with those coordinates should be found, since we deleted them
+                return False
+
+    return True
+
 
 x = True
 # fun as in function, not the joy I haven't experienced since attending highschool
-for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh):
-    print("\n\n")
+for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh, test_delete_VertsFacesEdges):
+
     if fun() == True:
         None
     else:
+        print("\n\n")
         print("Error in "+fun.__name__+" !")
         x = False
 
 if x == True:
     print("\nEvery test succeeded! (That's good)")
+else:
+    print("\nAt least one test failed. (That's not good)")
