@@ -1,9 +1,9 @@
 import bpy
-C = bpy.context
+
 D = bpy.data
 
 
-def selectObjects(object_list, deselectOthers=True, active=None):
+def selectObjects(context,object_list, deselectOthers=True, active=None):
     """Use this to select multiple objects and set a specific object as active.
 
     You can also use this to deselect all objects by giving an empty list.
@@ -25,7 +25,7 @@ def selectObjects(object_list, deselectOthers=True, active=None):
     # e.g. select_set() accepts a viewlayer parameter
     # https://docs.blender.org/api/2.93/bpy.types.LayerObjects.html?highlight=objects%20active#bpy.types.LayerObjects.active
     if deselectOthers == True:
-        selectedObjs = C.selected_objects.copy()
+        selectedObjs = context.selected_objects.copy()
         # uncomfortable with using the list itself since the elements will disappear with each iteration
         for obj in selectedObjs:
             obj.select_set(False)
@@ -33,4 +33,4 @@ def selectObjects(object_list, deselectOthers=True, active=None):
         obj.select_set(True)
     # this value accepts None as well
     # Does NOT work from other scenes.
-    C.view_layer.objects.active = active
+    context.view_layer.objects.active = active

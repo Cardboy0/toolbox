@@ -1,6 +1,6 @@
 import bpy
 import bmesh
-C = bpy.context
+
 D = bpy.data
 
 
@@ -10,7 +10,7 @@ D = bpy.data
 # https://blender.stackexchange.com/questions/27234/python-how-to-completely-remove-an-object
 
 
-def deleteObjectAndMesh(obj):
+def deleteObjectAndMesh(context,obj):
     """Deletes the specified object AND its mesh.
 
     Vital for scripts where you create large amounts of objects and delete them again, as the "default" deleting does not remove meshes, meaning they would pile up your file.
@@ -74,9 +74,7 @@ def delete_VertsFacesEdges(context, mesh, indexList, type="VERTEX", deleteChilde
             # bmesh.ops.delete() doesn't allow duplicate elements, so we simply sort out duplicate indices by turning the list into a set
             ourChildVerts = set(ourChildVerts)
             indexList = ourChildVerts  # the "fixed" version
-
     elif type == "FACE":
-
         if deleteChildelements == False:
             elements = bm.faces
             bmeshParameter = "FACES"
@@ -100,7 +98,8 @@ def delete_VertsFacesEdges(context, mesh, indexList, type="VERTEX", deleteChilde
     else:
         raise Exception(
             "Invalid value for type parameter - only 'VERTEX', 'EDGE' and 'FACE' are recognised")
-    # bmeshes always want to do this after you create them and after you did changes to some indices, e.g. by removing a vertex
+            
+    # bmeshes always want to do this after you create them and after you did changes to some indices, e.g. by removing a vertex:
     elements.ensure_lookup_table()
     maxIndex = len(elements)-1  # user might have given us invalid indices
     elementList = []

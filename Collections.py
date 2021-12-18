@@ -1,13 +1,12 @@
 import bpy
 
-C = bpy.context
 D = bpy.data
 
 
 # for dealing with collections in general (but not viewlayer collections)
 
 
-def linkObjectToCollections(obj, collections):
+def linkObjectToCollections(context,obj, collections):
     """"Clean" linking of an object into one or multiple collections, i.e. unlinking it from any other collections at the same time.
 
     Parameters
@@ -37,7 +36,7 @@ def linkObjectToCollections(obj, collections):
             coll.objects.unlink(obj)
 
 
-def linkCollectionToCollections(coll, collections):
+def linkCollectionToCollections(context,coll, collections):
     """ "Clean" linking of a collection into one or multiple other collections, i.e. unlinking it from any other collections at the same time.
 
     Parameters
@@ -84,7 +83,7 @@ def linkCollectionToCollections(coll, collections):
             parent.children.unlink(coll)
 
 
-def createCollection(name, parentCollection="MASTER", avoidDuplicates=False):
+def createCollection(context,name, parentCollection="MASTER", avoidDuplicates=False):
     """Create a new collection inside a specific parent collection.
 
     Know that same as with objects, no two collections can have the same name and as such your chosen name may not be the actual one of this new collection.
@@ -105,7 +104,7 @@ def createCollection(name, parentCollection="MASTER", avoidDuplicates=False):
         The newly created collection (or if avoidDuplicates==True and an already existing collection was found, this collection)
     """
     if parentCollection == "MASTER":
-        parentCollection = C.scene.collection
+        parentCollection = context.scene.collection
     if avoidDuplicates == True:
         index = parentCollection.children.find(name)
         if index != -1:

@@ -57,7 +57,7 @@ def test_selectObjects():
     bpy.ops.mesh.primitive_plane_add()
     bpy.ops.mesh.primitive_plane_add()
     bpy.ops.object.select_all(action='SELECT')
-    selectObjects.selectObjects([cube], True, cube)
+    selectObjects.selectObjects(C, [cube], True, cube)
     if cube in C.selected_objects and len(C.selected_objects) == 1 and C.object == cube and C.active_object == cube:
         return True
     else:
@@ -85,7 +85,7 @@ def test_deleteObjectAndMesh():
     mesh = D.meshes["kl152592"]
     objs = len(D.objects)
     meshes = len(D.meshes)
-    deleteStuff.deleteObjectAndMesh(C.object)
+    deleteStuff.deleteObjectAndMesh(C, C.object)
     if objs-1 == len(D.objects) and meshes-1 == len(D.meshes) and D.objects.find("kl152592") == -1 and D.meshes.find("kl152592") == -1:
         return True
     else:
@@ -142,18 +142,18 @@ def test_createCollection():
     bpy.ops.mesh.primitive_ico_sphere_add()
     obj1 = C.object
     obj1.name = "obj1"
-    coll_1 = Collections.createCollection("coll_1", origScene.collection)
-    coll_2 = Collections.createCollection("coll_2", origScene.collection)
+    coll_1 = Collections.createCollection(C, "coll_1", origScene.collection)
+    coll_2 = Collections.createCollection(C, "coll_2", origScene.collection)
     # should only exist in current (wrong) scene
-    coll_xxxx = Collections.createCollection("coll_xxxx", "MASTER")
-    coll_3 = Collections.createCollection("coll_3", "MASTER")
-    Collections.linkCollectionToCollections(coll_3, origScene.collection)
-    coll_4 = Collections.createCollection("coll_4", origScene.collection)
-    coll_2_1 = Collections.createCollection("coll_2_1", coll_4)
-    coll_2_2 = Collections.createCollection("coll_2_2", coll_2)
-    Collections.linkCollectionToCollections(coll_2_1, [coll_4, coll_2])
-    Collections.linkObjectToCollections(obj1, [coll_1, coll_4])
-    Collections.linkObjectToCollections(obj1, [coll_2_2, coll_3])
+    coll_xxxx = Collections.createCollection(C, "coll_xxxx", "MASTER")
+    coll_3 = Collections.createCollection(C, "coll_3", "MASTER")
+    Collections.linkCollectionToCollections(C, coll_3, origScene.collection)
+    coll_4 = Collections.createCollection(C, "coll_4", origScene.collection)
+    coll_2_1 = Collections.createCollection(C, "coll_2_1", coll_4)
+    coll_2_2 = Collections.createCollection(C, "coll_2_2", coll_2)
+    Collections.linkCollectionToCollections(C, coll_2_1, [coll_4, coll_2])
+    Collections.linkObjectToCollections(C, obj1, [coll_1, coll_4])
+    Collections.linkObjectToCollections(C, obj1, [coll_2_2, coll_3])
 
     # reset the scene to original
     bpy.context.window.scene = origScene
@@ -203,7 +203,7 @@ def test_tagVertices():
         dictCoords[i] = mesh.vertices[i].co.copy()
     # we will later identify vertices by their coordinates as comparison
 
-    resultDict = tagVertices.TagVertices.tag(mesh, "test", vertsToTag)
+    resultDict = tagVertices.TagVertices.tag(C, mesh, "test", vertsToTag)
 
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='DESELECT')
@@ -239,8 +239,8 @@ def test_tagVertices():
 
     # print(comparisonDict)
 
-    tagResultList = tagVertices.TagVertices.identifyVerts(
-        mesh, resultDict["LAYERNAME"], resultDict["LAYERVALUES"])
+    tagResultList = tagVertices.TagVertices.identifyVerts(C,
+                                                          mesh, resultDict["LAYERNAME"], resultDict["LAYERVALUES"])
 
     if preparing == False:
         print("preparing for vertex tagging didnt work as planned")
@@ -261,7 +261,7 @@ def test_tagVertices():
 
     # everything is fine
     # bonus: test if datalayer is deletable
-    tagVertices.TagVertices.removeLayer(mesh, resultDict["LAYERNAME"])
+    tagVertices.TagVertices.removeLayer(C, mesh, resultDict["LAYERNAME"])
     messStuffUp()
     if len(mesh.vertex_layers_int) != 0:
         print("data layer removal didn't work")

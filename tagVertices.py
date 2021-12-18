@@ -2,7 +2,6 @@ import bpy
 import random
 import bmesh
 #import math
-C = bpy.context
 D = bpy.data
 
 
@@ -17,7 +16,7 @@ class TagVertices:
     """
 
     @staticmethod
-    def tag(mesh, layerName="tagged_vertices", vertIndices="ALL"):
+    def tag(context,mesh, layerName="tagged_vertices", vertIndices="ALL"):
         """Tags the vertices with an int data layer so they can be identified by other methods of this class later.
 
         Parameters
@@ -61,7 +60,7 @@ class TagVertices:
 
     @staticmethod
     # returns a list where the position of a value is the old index, and the value itself the new index
-    def identifyVerts(mesh, layerName, oldLayerValues):
+    def identifyVerts(context,mesh, layerName, oldLayerValues):
         """Find out which old vertex is which new vertex in your mesh. You need the dictionary from the tag() method for this
 
         Parameters
@@ -101,7 +100,7 @@ class TagVertices:
 
     @staticmethod
     # removes a datalayer
-    def removeLayer(mesh, layerName):
+    def removeLayer(context,mesh, layerName):
         """Removes a data layer that has been created by the tag() method. Not actually neccessary, but advisable.
 
         Parameters
