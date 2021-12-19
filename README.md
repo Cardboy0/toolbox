@@ -7,6 +7,7 @@ A collection of Blender Python functions and classes for frequent tasks, current
 - **create an applied duplicate of a mesh** (a.k.a. The mesh if you would apply every shapekey, modifier etc. to it)
     - not yet properly tested
 - **deleting vertices, faces or edges of a mesh**
+- **dealing with coordinates**
 - more might follow
 
 

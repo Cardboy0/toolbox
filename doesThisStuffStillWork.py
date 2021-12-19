@@ -417,10 +417,37 @@ def test_delete_VertsFacesEdges():
 
     return True
 
+def test_coordinateStuff():
+    try:
+        #import coordinatesStuff
+        coordinatesStuff = bpy.data.texts["coordinatesStuff.py"].as_module()
+    except:
+        print("COULDN'T IMPORT coordinatesStuff")
+        return False
+    messStuffUp()
+    bpy.ops.mesh.primitive_plane_add()
+    obj = C.object
+    mesh = obj.data
+    coordinates= coordinatesStuff.getVertexCoordinates(C,mesh,[1,3])
+    if coordinatesStuff.isVectorClose(C,coordinates[1],coordinates[3],6) == True:
+        return False
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.transform.translate(value=(-0.2, 0.5, 10), orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+    bpy.ops.transform.rotate(value=0.6, orient_axis='Z', orient_type='VIEW', orient_matrix=((0.7, 0.8, -0.1), (-0.3, 0.2, 0.9), (0.6, -0.6, 0.3)), orient_matrix_type='VIEW', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+    bpy.ops.transform.resize(value=(0.001, 0.001, 0.001), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    coordinates= coordinatesStuff.getVertexCoordinates(C,mesh,"ALL")
+    #after resizing, two vertices of the plane (if not diagonal) should have a distance of 0.002 meters
+    if coordinatesStuff.isVectorClose(C,coordinates[1],coordinates[3],6) == True or coordinatesStuff.isVectorClose(C,coordinates[1],coordinates[3],2)==False:
+        return False
+    return True
+
+
 
 x = True
 # fun as in function, not the joy I haven't experienced since attending highschool
-for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh, test_delete_VertsFacesEdges):
+for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh, test_delete_VertsFacesEdges, test_coordinateStuff):
 
     if fun() == True:
         None
