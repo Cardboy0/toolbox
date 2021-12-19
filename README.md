@@ -12,6 +12,9 @@ A collection of Blender Python functions and classes for frequent tasks, current
 
 All functions include a 'context' parameter to pass to make it easier for people who plan to use them in their own operators.
 
+# source
+https://github.com/Cardboy0/toolbox
+
 
 # testing
 Because I realised that I'd rather step on a rusty nail then manually test each function or class again each time after I do some minor changes to it, I created a test script - **doesThisStuffStillWork.py**
