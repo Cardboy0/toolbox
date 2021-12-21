@@ -417,6 +417,7 @@ def test_delete_VertsFacesEdges():
 
     return True
 
+
 def test_coordinateStuff():
     try:
         #import coordinatesStuff
@@ -428,26 +429,65 @@ def test_coordinateStuff():
     bpy.ops.mesh.primitive_plane_add()
     obj = C.object
     mesh = obj.data
-    coordinates= coordinatesStuff.getVertexCoordinates(C,mesh,[1,3])
-    if coordinatesStuff.isVectorClose(C,coordinates[1],coordinates[3],6) == True:
+    coordinates = coordinatesStuff.getVertexCoordinates(C, mesh, [1, 3])
+    if coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 6) == True:
         return False
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.transform.translate(value=(-0.2, 0.5, 10), orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
-    bpy.ops.transform.rotate(value=0.6, orient_axis='Z', orient_type='VIEW', orient_matrix=((0.7, 0.8, -0.1), (-0.3, 0.2, 0.9), (0.6, -0.6, 0.3)), orient_matrix_type='VIEW', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
-    bpy.ops.transform.resize(value=(0.001, 0.001, 0.001), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+    bpy.ops.transform.translate(value=(-0.2, 0.5, 10), orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
+                                mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+    bpy.ops.transform.rotate(value=0.6, orient_axis='Z', orient_type='VIEW', orient_matrix=((0.7, 0.8, -0.1), (-0.3, 0.2, 0.9), (0.6, -0.6, 0.3)), orient_matrix_type='VIEW',
+                             mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+    bpy.ops.transform.resize(value=(0.001, 0.001, 0.001), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True,
+                             use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
     bpy.ops.object.mode_set(mode='OBJECT')
-    coordinates= coordinatesStuff.getVertexCoordinates(C,mesh,"ALL")
-    #after resizing, two vertices of the plane (if not diagonal) should have a distance of 0.002 meters
-    if coordinatesStuff.isVectorClose(C,coordinates[1],coordinates[3],6) == True or coordinatesStuff.isVectorClose(C,coordinates[1],coordinates[3],2)==False:
+    coordinates = coordinatesStuff.getVertexCoordinates(C, mesh, "ALL")
+    # after resizing, two vertices of the plane (if not diagonal) should have a distance of 0.002 meters
+    if coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 6) == True or coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 2) == False:
         return False
     return True
 
 
+def test_everythingKeyFrames():
+    try:
+        #import everythingKeyFrames
+        everythingKeyFrames = bpy.data.texts["everythingKeyFrames.py"].as_module(
+        )
+    except:
+        print("COULDN'T IMPORT everythingKeyFrames")
+        return False
+    messStuffUp()
+    frame = 199
+    C.scene.frame_set(frame)
+
+    # 1. getOrCreate action
+    # 2. create keyframes for new fcurves (x and y location)
+    # 3. Check if values for object actually change at specified frames
+
+    bpy.ops.mesh.primitive_cube_add()
+    obj = C.object
+    origLocations = [obj.location.x, obj.location.y]
+    # [0,1] are the indices of x and y in vectors
+    for (listOrDict, axis) in zip([[frame-8, 0.5555, frame+8, 1, frame-12, 0], {frame-8: 0.5555, frame+8: 1, frame-12: 0}], [0, 1]):
+
+        action = everythingKeyFrames.getOrCreateAction(C, obj)
+        fcurve = action.fcurves.new("location", index=axis)
+        everythingKeyFrames.createKeyFramesFast(C, fcurve, listOrDict)
+        for (changedFrame, value) in zip([frame-8, frame+8, frame-12], [0.5555, 1, 0]):
+            C.scene.frame_set(changedFrame)
+            currentLocation = round(obj.location[axis], 5)
+            expectedLocation = round(origLocations[axis]+value, 5)
+            if currentLocation != expectedLocation:
+                print("Wrong locations found:" +
+                      str(currentLocation)+" "+str(expectedLocation))
+                return False
+    return True
+
 
 x = True
 # fun as in function, not the joy I haven't experienced since attending highschool
-for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh, test_delete_VertsFacesEdges, test_coordinateStuff):
+for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh,
+            test_delete_VertsFacesEdges, test_coordinateStuff, test_everythingKeyFrames):
 
     if fun() == True:
         None
