@@ -8,6 +8,8 @@ A collection of Blender Python functions and classes for frequent tasks, current
     - not yet properly tested
 - **deleting vertices, faces or edges of a mesh**
 - **dealing with coordinates**
+- **dealing with keyframes (actions, fcurves)**
+- **dealing with vertex groups** 
 - more might follow
 
 

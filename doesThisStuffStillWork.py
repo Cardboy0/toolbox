@@ -45,6 +45,23 @@ def messStuffUp():
     # after deleting no object will be active, so no mode can be set and will give us an error
 
 
+def createSubdivObj(subdivisions=0, type="PLANE"):
+    def raiseErr():
+        raise Exception(str(type)+" not a valid value.")
+    possibleOps = {
+        "PLANE": bpy.ops.mesh.primitive_plane_add,
+        "CUBE": bpy.ops.mesh.primitive_cube_add,
+    }
+    possibleOps.get(type, raiseErr)()
+    obj = C.object
+    #mesh = obj.data
+    bpy.ops.object.mode_set(mode='EDIT')
+    for subdivs in range(subdivisions):
+        bpy.ops.mesh.subdivide()
+    bpy.ops.object.mode_set(mode='OBJECT')
+    return obj
+
+
 # selectObjects.py
 def test_selectObjects():
     try:
@@ -186,16 +203,10 @@ def test_tagVertices():
         print("COULDN'T IMPORT tagVertices")
         return False
     messStuffUp()
-    bpy.ops.mesh.primitive_plane_add()
-    obj = C.object
+    obj = createSubdivObj(subdivisions=2, type="PLANE")
     mesh = obj.data
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.subdivide()
-    bpy.ops.mesh.subdivide()
     # preparing is a bool value that tracks if the preparations for the actual methods to test actually all went as planned
     # the plane should now have 25 vertices total
-    # allow the actual mesh object to update
-    bpy.ops.object.mode_set(mode='OBJECT')
     preparing = len(mesh.vertices) == 25
     vertsToTag = [22, 18, 15, 2, 23, 17, 11]
     dictCoords = {}
@@ -294,15 +305,9 @@ def test_delete_VertsFacesEdges():
         return False
 
     def newPlane():
-        bpy.ops.mesh.primitive_plane_add()
-        obj = C.object
+        obj = createSubdivObj(subdivisions=3, type="PLANE")
         obj.name = "testDeletionPlane_1"
         mesh = obj.data
-        bpy.ops.object.mode_set(mode='EDIT')
-        bpy.ops.mesh.subdivide()
-        bpy.ops.mesh.subdivide()
-        bpy.ops.mesh.subdivide()
-        bpy.ops.object.mode_set(mode='OBJECT')
         messStuffUp()
         return mesh
 
@@ -484,10 +489,184 @@ def test_everythingKeyFrames():
     return True
 
 
+def test_vertexGroups():
+    try:
+        #import vertexGroups
+        vertexGroups = bpy.data.texts["vertexGroups.py"].as_module()
+    except:
+        print("COULDN'T IMPORT vertexGroups")
+        return False
+    messStuffUp()
+    """
+    - Create 3 lists/dictionaries:
+        1. list_uniform: Contains a bunch of vertex indices that are supposed to get a uniformal weight in the VG
+        2. dict_specific: A dictionary that specified specific vertex indices to get specific weights
+        3. list_unchanged: Similar to list_uniform, however these values are supposed to be kept by the VG in question until the end without any changes
+        4. list_remove: Some vertex indices to remove
+      Invalid indices (negative, duplicates and out of range) included for testing too
+      Some of the indices in these lists should overlap
+      Additionally, some overlaps in these lists needs to be saved as their own lists 
+
+    - Create new subdivided plane
+    - Make sure it's neither selected nor the active object
+    - create VG1 and VG2
+    - check: activeVG == None
+    - create VG3, set it as active
+        - only purpose is to make sure that manipulating other VGs does not accidently change this one
+        - Assign it vertex weights from list_unchanged
+    - VG1:
+        1. Set/assign vertices via dict_specific
+        2. Set/assign vertices via list_uniform
+        # basically values of list_uniform override the ones of dict_specific, and with VG2 it's the other way around
+    - VG2:
+        - steps for VG1 but in reverse
+    - VG1 & VG2:
+        - remove verts from list_remove
+        - get all vertex indices in VG
+        - check: - both VGs have the same amount of assigned vertices
+                 - amount of assigned vertices is the one expected when comparing the original lists/dicts
+        - get all vertex weights in VG
+        - compare with expected lists/dicts
+    - check: VG3 still the active VG?
+    - check: No changes in VG3's vertices?
+
+
+    Currently unchecked:
+        - getVertsAndWeightsFromVertexGroup(vertIndicesToCheck = some list)
+    """
+    # lists/dictionaries     Our plane is subdivided 3 times, giving it a total of 81 vertices
+    list_uniform = [5, -1, 100, 65, 81, 8, 0, 2, 2, 2, 30]
+    uniformValue = 0.455
+    dict_specific = {0.3: [-1, 100], 0.5: [65, 2], 1: [4, 5, 6, 7, 8]}
+    list_unchanged = [10, 11, 12, 45, 46, 47, 30, 5]
+    unchaged_uniform_value = 0.111
+    # some indices here are in none of the lists above
+    list_remove = [-1, 100, 2, 8, 11, 12, ]
+
+    def getOverlaps(list1, list2):
+        intersections = set(list1).intersection(list2)
+        return list(intersections)
+
+    def removeInvalidIndices(list1):
+        return list(vertexGroups.validateVertIndicesForVG(context=C, vertexGroupOrMesh=obj.data, vertIndices=list1, returnType="set"))
+
+    obj = createSubdivObj(subdivisions=3, type="PLANE")
+    # just to remove the selection and active status from the plane
+    createSubdivObj(subdivisions=0, type="CUBE")
+    if C.object == obj or obj.select_get() == True:
+        return False  # this shouldnt happen but you never know
+
+    vg1 = vertexGroups.createVertexGroup(context=C, obj=obj, vgName="VG1")
+    vg2 = vertexGroups.createVertexGroup(context=C, obj=obj, vgName="VG2")
+    if obj.vertex_groups.active != None:
+        return False
+    vg3 = vertexGroups.createVertexGroup(context=C, obj=obj, vgName="VG3")
+    obj.vertex_groups.active = vg3
+    vertexGroups.setVertexGroupValuesUniform(
+        context=C, vertexGroup=vg3, vertexIndices=list_unchanged, value=unchaged_uniform_value)
+
+    vertexGroups.setVertexGroupValuesSpecific(
+        context=C, vertexGroup=vg1, weightsForVerts=dict_specific)
+    vertexGroups.setVertexGroupValuesUniform(
+        context=C, vertexGroup=vg1, vertexIndices=list_uniform, value=uniformValue)
+
+    vertexGroups.setVertexGroupValuesUniform(
+        context=C, vertexGroup=vg2, vertexIndices=list_uniform, value=uniformValue)
+    vertexGroups.setVertexGroupValuesSpecific(
+        context=C, vertexGroup=vg2, weightsForVerts=dict_specific)
+
+    vertexGroups.removeVertsFromVertexGroup(
+        context=C, vertexGroup=vg1, vertIndices=list_remove, validate=True)
+    vertexGroups.removeVertsFromVertexGroup(
+        context=C, vertexGroup=vg2, vertIndices=list_remove, validate=True)
+
+    vertsVG1 = vertexGroups.getVertsAndWeightsFromVertexGroup(
+        context=C, vertexGroup=vg1, vertIndicesToCheck="ALL", addWeights=False)["vertsInside"]
+    vertsVG2 = vertexGroups.getVertsAndWeightsFromVertexGroup(
+        context=C, vertexGroup=vg2, vertIndicesToCheck="ALL", addWeights=False)["vertsInside"]
+
+    expectedVerts = list_uniform.copy()
+    for weight, indexList in dict_specific.items():
+        expectedVerts.extend(indexList)
+    expectedVerts = set(expectedVerts)
+    expectedVerts.difference_update(set(list_remove))
+    expectedVerts = removeInvalidIndices(expectedVerts)
+    expectedAmount = len(expectedVerts)
+
+    if len(vertsVG1) != len(vertsVG2) or len(vertsVG1) != expectedAmount or len(vertsVG1)==0:
+        return False
+
+    weightsVG1 = vertexGroups.getVertsAndWeightsFromVertexGroup(
+        context=C, vertexGroup=vg1, vertIndicesToCheck="ALL", addWeights=True)["weights"]
+    weightsVG2 = vertexGroups.getVertsAndWeightsFromVertexGroup(
+        context=C, vertexGroup=vg2, vertIndicesToCheck="ALL", addWeights=True)["weights"]
+
+    # vg1 weights
+    for vertIndex in vertsVG1:
+        weight = round(weightsVG1[vertIndex], 3)
+        if vertIndex in list_remove:
+            if weight != None:
+                return False
+            else:
+                continue
+        elif vertIndex in list_uniform:
+            if weight != uniformValue:
+                return False
+            else:
+                continue
+        else:
+            x = False
+            for expectedWeight, indexList in dict_specific.items():
+                if vertIndex in indexList and weight == round(expectedWeight, 3):
+                    x = True
+                    break
+            if x == True:
+                continue
+            # print(str(vertIndex)+"\t"+str(weight))
+            return False
+
+    # vg2 weights
+    for vertIndex in vertsVG2:
+        weight = round(weightsVG2[vertIndex], 3)
+        if vertIndex in list_remove:
+            if weight != None:
+                return False
+            else:
+                continue
+        x = False
+        for expectedWeight, indexList in dict_specific.items():
+            if vertIndex in indexList:
+                if weight == round(expectedWeight, 3):
+                    x = True
+                    break
+                else:
+                    return False
+        if x == True:
+            continue
+        if vertIndex in list_uniform:
+            if weight == round(uniformValue, 3):
+                continue
+            else:
+                return False
+        return False
+
+    if obj.vertex_groups.active_index != vg3.index or obj.vertex_groups.active != vg3:
+        return False
+
+    vg3VertexValues = vertexGroups.getVertsAndWeightsFromVertexGroup(
+        context=C, vertexGroup=vg3, vertIndicesToCheck="ALL", addWeights=True)
+    if len(vg3VertexValues["vertsInside"]) != len(removeInvalidIndices(list_unchanged)):
+        return False
+    for vertIndex in vg3VertexValues["vertsInside"]:
+        if round(vg3VertexValues["weights"][vertIndex], 3) != unchaged_uniform_value:
+            return False
+    return True
+
+
 x = True
 # fun as in function, not the joy I haven't experienced since attending highschool
 for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh,
-            test_delete_VertsFacesEdges, test_coordinateStuff, test_everythingKeyFrames):
+            test_delete_VertsFacesEdges, test_coordinateStuff, test_everythingKeyFrames, test_vertexGroups):
 
     if fun() == True:
         None
