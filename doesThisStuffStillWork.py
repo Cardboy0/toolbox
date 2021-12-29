@@ -1,4 +1,4 @@
-# tests if the other functions and classes in this repository still work.
+# Really ugly script to test if the other functions and classes in this repository still work.
 # obviously we can't cover every corner case, so take the results with a grain of salt.
 # Additionally: this particular script uses bpy.ops. operators often - this is on purpose, because it's for testing. In your own scripts try to NOT use bpy.ops however.
 
@@ -529,10 +529,6 @@ def test_vertexGroups():
         - compare with expected lists/dicts
     - check: VG3 still the active VG?
     - check: No changes in VG3's vertices?
-
-
-    Currently unchecked:
-        - getVertsAndWeightsFromVertexGroup(vertIndicesToCheck = some list)
     """
     # lists/dictionaries     Our plane is subdivided 3 times, giving it a total of 81 vertices
     list_uniform = [5, -1, 100, 65, 81, 8, 0, 2, 2, 2, 30]
@@ -580,10 +576,8 @@ def test_vertexGroups():
     vertexGroups.removeVertsFromVertexGroup(
         context=C, vertexGroup=vg2, vertIndices=list_remove, validate=True)
 
-    vertsVG1 = vertexGroups.getVertsAndWeightsFromVertexGroup(
-        context=C, vertexGroup=vg1, vertIndicesToCheck="ALL", addWeights=False)["vertsInside"]
-    vertsVG2 = vertexGroups.getVertsAndWeightsFromVertexGroup(
-        context=C, vertexGroup=vg2, vertIndicesToCheck="ALL", addWeights=False)["vertsInside"]
+    vertsVG1 = vertexGroups.getVertsInVertexGroup(context=C, vertexGroup=vg1)
+    vertsVG2 = vertexGroups.getVertsInVertexGroup(context=C, vertexGroup=vg2)
 
     expectedVerts = list_uniform.copy()
     for weight, indexList in dict_specific.items():
@@ -596,10 +590,8 @@ def test_vertexGroups():
     if len(vertsVG1) != len(vertsVG2) or len(vertsVG1) != expectedAmount or len(vertsVG1)==0:
         return False
 
-    weightsVG1 = vertexGroups.getVertsAndWeightsFromVertexGroup(
-        context=C, vertexGroup=vg1, vertIndicesToCheck="ALL", addWeights=True)["weights"]
-    weightsVG2 = vertexGroups.getVertsAndWeightsFromVertexGroup(
-        context=C, vertexGroup=vg2, vertIndicesToCheck="ALL", addWeights=True)["weights"]
+    weightsVG1 = vertexGroups.getVertexWeights(context=C, vertexGroup=vg1, vertexIndices=vertsVG1)
+    weightsVG2 = vertexGroups.getVertexWeights(context=C, vertexGroup=vg2, vertexIndices=vertsVG2)
 
     # vg1 weights
     for vertIndex in vertsVG1:
@@ -653,12 +645,13 @@ def test_vertexGroups():
     if obj.vertex_groups.active_index != vg3.index or obj.vertex_groups.active != vg3:
         return False
 
-    vg3VertexValues = vertexGroups.getVertsAndWeightsFromVertexGroup(
-        context=C, vertexGroup=vg3, vertIndicesToCheck="ALL", addWeights=True)
-    if len(vg3VertexValues["vertsInside"]) != len(removeInvalidIndices(list_unchanged)):
+    vg3Verts = vertexGroups.getVertsInVertexGroup(context=C, vertexGroup=vg3)
+    vg3Weights = vertexGroups.getVertexWeights(context=C, vertexGroup=vg3, vertexIndices=vg3Verts)
+
+    if len(vg3Verts) != len(removeInvalidIndices(list_unchanged)):
         return False
-    for vertIndex in vg3VertexValues["vertsInside"]:
-        if round(vg3VertexValues["weights"][vertIndex], 3) != unchaged_uniform_value:
+    for vertIndex in vg3Verts:
+        if round(vg3Weights[vertIndex], 3) != unchaged_uniform_value:
             return False
     return True
 

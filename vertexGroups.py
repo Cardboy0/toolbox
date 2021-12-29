@@ -142,8 +142,8 @@ def removeVertsFromVertexGroup(context, vertexGroup, vertIndices="ALL", validate
     vertexGroup.remove(vertIndices)
 
 
-def getVertsAndWeightsFromVertexGroup(context, vertexGroup, vertIndicesToCheck="ALL", addWeights=True):
-    """Returns the indices of all vertices that are inside the given vertex group, and additionally if desired their respective weights in said vertex group.
+def getVertsInVertexGroup(context, vertexGroup):
+    """Tells you which vertices are currently assigned to the given vertex group.
 
     Parameters
     ----------
@@ -151,42 +151,99 @@ def getVertsAndWeightsFromVertexGroup(context, vertexGroup, vertIndicesToCheck="
         probably bpy.context
     vertexGroup : bpy.types.VertexGroup
         The vertex group to analyse
-    vertIndicesToCheck : List or similar, or "ALL"
-        If you only care about some specific vertices, put their indices in this parameter and all other vertices will get ignored. By default "ALL"
-    addWeights : bool
-        Whether you want to also get the weights of the vertices that were found in the vertex group. By default True
 
     Returns
     -------
-    dict
-        returnDict["vertsInside"] is a set that contains all vertices that were found inside\n
-        returnDict["weights"] - list that only gets added if addWeights=True. Contents: returnDict["weights"][vertIndex]==weight. Vertices that got ignored or weren't found get a default value of None.
+    set
+        All indices of vertices that are in the vertex group
     """
-    # Sadly, foreach_get() doesnt work with sets
-    indexVertexGroup = vertexGroup.index
-    dictReturn = dict()
     obj = vertexGroup.id_data
-    if vertIndicesToCheck == "ALL":
-        vertIndicesToCheck = range(len(obj.data.vertices))
-    vertsInVertexGroup = set()
-    dictReturn["vertsInside"] = vertsInVertexGroup
-    if addWeights:
-        weights = [None]*len(obj.data.vertices)
-        dictReturn["weights"] = weights
+    foundVerts = set()
+    for vertIndex in range(len(obj.data.vertices)):
+        try:
+            vertexGroup.weight(vertIndex)
+            foundVerts.add(vertIndex)
+            # you might think that this is stupid, and you'd be right
+            # but this seems to be the best possible solution
+            # Some posts on the internet do this by searching inside someVertex.groups for the vertex group in question
+            # That's at least twice as slow as this function, and with each added vertex group it would require more time. So don't do that.
+        except:
+            pass
+    return foundVerts
 
-    for vertIndex in vertIndicesToCheck:
-        vert = obj.data.vertices[vertIndex]
-        totalGroups = len(vert.groups)
-        if totalGroups != 0:
-            groupIndeces = [0]*totalGroups
-            # vertex.groups[0].group returns the VG index of the first VG the vertex is part of
-            vert.groups.foreach_get("group", groupIndeces)
-            # while casting a list into a set will take extra time, sets are however magnitudes faster when using the in-operator for large arrays
-            # in theory you could check the total amount of vertex groups the object has at the beginning and then from that amount decide if lists are faster than sets
-            groupIndeces = set(groupIndeces)
-            if indexVertexGroup in groupIndeces:
-                vertsInVertexGroup.add(vertIndex)
-                if addWeights:  # these two lines of code look like they could be optimised - by somebody who's not me
-                    # accessing vert.groups[?].weight requires us to know ? first
-                    weights[vertIndex] = vertexGroup.weight(vertIndex)
-    return dictReturn
+
+def getVertexWeights(context, vertexGroup, vertexIndices):
+    """Returns the weights of given vertices inside a vertex group.
+    WARNING: All supplied vertices must exist within the vertex group, otherwise Blender will throw an error.
+
+    Parameters
+    ----------
+    context : bpy.types.Context
+        probably bpy.context
+    vertexGroup : bpy.types.VertexGroup
+        The vertex group to analyse
+    vertexIndices : List or similar
+        Contains the vertex indices to check. All indices must be assigned to the vertex group for this to work!
+
+    Returns
+    -------
+    list
+        Weight of vertex 20 = returnList[20]
+    """
+    obj = vertexGroup.id_data
+    totalVerts = len(obj.data.vertices)
+    weights = [None]*totalVerts
+    for i in vertexIndices:
+        weights[i] = vertexGroup.weight(i)
+    return weights
+
+
+# This function below should not be used as the time required will depend on the amount of vertex groups your object posseses
+# def getVertsAndWeightsFromVertexGroup(context, vertexGroup, vertIndicesToCheck="ALL", addWeights=True):
+#     """Returns the indices of all vertices that are inside the given vertex group, and additionally if desired their respective weights in said vertex group.
+
+#     Parameters
+#     ----------
+#     context : bpy.types.Context
+#         probably bpy.context
+#     vertexGroup : bpy.types.VertexGroup
+#         The vertex group to analyse
+#     vertIndicesToCheck : List or similar, or "ALL"
+#         If you only care about some specific vertices, put their indices in this parameter and all other vertices will get ignored. By default "ALL"
+#     addWeights : bool
+#         Whether you want to also get the weights of the vertices that were found in the vertex group. By default True
+
+#     Returns
+#     -------
+#     dict
+#         returnDict["vertsInside"] is a set that contains all vertices that were found inside\n
+#         returnDict["weights"] - list that only gets added if addWeights=True. Contents: returnDict["weights"][vertIndex]==weight. Vertices that got ignored or weren't found get a default value of None.
+#     """
+#     # Sadly, foreach_get() doesnt work with sets
+#     indexVertexGroup = vertexGroup.index
+#     dictReturn = dict()
+#     obj = vertexGroup.id_data
+#     if vertIndicesToCheck == "ALL":
+#         vertIndicesToCheck = range(len(obj.data.vertices))
+#     vertsInVertexGroup = set()
+#     dictReturn["vertsInside"] = vertsInVertexGroup
+#     if addWeights:
+#         weights = [None]*len(obj.data.vertices)
+#         dictReturn["weights"] = weights
+
+#     for vertIndex in vertIndicesToCheck:
+#         vert = obj.data.vertices[vertIndex]
+#         totalGroups = len(vert.groups)
+#         if totalGroups != 0:
+#             groupIndeces = [0]*totalGroups
+#             # vertex.groups[0].group returns the VG index of the first VG the vertex is part of
+#             vert.groups.foreach_get("group", groupIndeces)
+#             # while casting a list into a set will take extra time, sets are however magnitudes faster when using the in-operator for large arrays
+#             # in theory you could check the total amount of vertex groups the object has at the beginning and then from that amount decide if lists are faster than sets
+#             groupIndeces = set(groupIndeces)
+#             if indexVertexGroup in groupIndeces:
+#                 vertsInVertexGroup.add(vertIndex)
+#                 if addWeights:  # these two lines of code look like they could be optimised - by somebody who's not me
+#                     # accessing vert.groups[?].weight requires us to know ? first
+#                     weights[vertIndex] = vertexGroup.weight(vertIndex)
+#     return dictReturn
