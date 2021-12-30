@@ -10,6 +10,7 @@ A collection of Blender Python functions and classes for frequent tasks, current
 - **dealing with coordinates**
 - **dealing with keyframes (actions, fcurves)**
 - **dealing with vertex groups** 
+- **dealing with shape keys**
 - more might follow
 
 
