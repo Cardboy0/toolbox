@@ -9,6 +9,9 @@ if __name__ == "__main__":
     import bpy
     import math
     import mathutils
+    import warnings
+    import os
+    import contextlib
     C = bpy.context
     D = bpy.data
 
@@ -18,14 +21,13 @@ if __name__ == "__main__":
     # 2. instead of writing "import yourScript", write yourScript = bpy.data.texts["yourScript.py"].as_module()
     # 3. It now works as if it had been imported
 
-
     C.scene.frame_set(100)
     bpy.ops.mesh.primitive_cube_add()
     cube = C.object
     print("\n\n"*3+"*"*200+"\nStart of new test run\n\n")
 
-
     # changes some stuff, such as switching to different frames, to make sure our results get "updated" properly
+
     def messStuffUp():
         global cube
         try:
@@ -46,7 +48,6 @@ if __name__ == "__main__":
         bpy.ops.object.delete(use_global=False)
         # after deleting no object will be active, so no mode can be set and will give us an error
 
-
     def createSubdivObj(subdivisions=0, type="PLANE"):
         def raiseErr():
             raise Exception(str(type)+" not a valid value.")
@@ -63,8 +64,8 @@ if __name__ == "__main__":
         bpy.ops.object.mode_set(mode='OBJECT')
         return obj
 
-
     # selectObjects.py
+
     def test_selectObjects():
         try:
             # import selectObjects
@@ -86,8 +87,8 @@ if __name__ == "__main__":
             print(C.active_object == cube)
             return False
 
-
     # deleteStuff.py
+
     def test_deleteObjectAndMesh():
         try:
             # import deleteStuff
@@ -114,8 +115,8 @@ if __name__ == "__main__":
             print(D.meshes.find("kl152592") == -1)
             return False
 
-
     # Collections.py
+
     def test_createCollection():
         # Try to create this:
         # master-collection (of scene)
@@ -141,7 +142,7 @@ if __name__ == "__main__":
         origScene = C.scene
         # delete pre-existing test-results
         deleteCollections = ["coll_1", "coll_2",
-                            "coll_2_1", "coll_2_2", "coll_3", "coll_4"]
+                             "coll_2_1", "coll_2_2", "coll_3", "coll_4"]
         for collName in deleteCollections:
             try:
                 D.collections.remove(D.collections[collName])
@@ -161,13 +162,17 @@ if __name__ == "__main__":
         bpy.ops.mesh.primitive_ico_sphere_add()
         obj1 = C.object
         obj1.name = "obj1"
-        coll_1 = Collections.createCollection(C, "coll_1", origScene.collection)
-        coll_2 = Collections.createCollection(C, "coll_2", origScene.collection)
+        coll_1 = Collections.createCollection(
+            C, "coll_1", origScene.collection)
+        coll_2 = Collections.createCollection(
+            C, "coll_2", origScene.collection)
         # should only exist in current (wrong) scene
         coll_xxxx = Collections.createCollection(C, "coll_xxxx", "MASTER")
         coll_3 = Collections.createCollection(C, "coll_3", "MASTER")
-        Collections.linkCollectionToCollections(C, coll_3, origScene.collection)
-        coll_4 = Collections.createCollection(C, "coll_4", origScene.collection)
+        Collections.linkCollectionToCollections(
+            C, coll_3, origScene.collection)
+        coll_4 = Collections.createCollection(
+            C, "coll_4", origScene.collection)
         coll_2_1 = Collections.createCollection(C, "coll_2_1", coll_4)
         coll_2_2 = Collections.createCollection(C, "coll_2_2", coll_2)
         Collections.linkCollectionToCollections(C, coll_2_1, [coll_4, coll_2])
@@ -194,8 +199,8 @@ if __name__ == "__main__":
             print(str)
         return True
 
-
     # tagVertices.py
+
     def test_tagVertices():
         try:
             # import tagVertices
@@ -253,7 +258,7 @@ if __name__ == "__main__":
         # print(comparisonDict)
 
         tagResultList = tagVertices.TagVertices.identifyVerts(C,
-                                                            mesh, resultDict["LAYERNAME"], resultDict["LAYERVALUES"])
+                                                              mesh, resultDict["LAYERNAME"], resultDict["LAYERVALUES"])
 
         if preparing == False:
             print("preparing for vertex tagging didnt work as planned")
@@ -282,8 +287,8 @@ if __name__ == "__main__":
 
         return True
 
-
     # createRealMesh.py
+
     def test_createRealMesh():
         try:
             #import createRealMesh
@@ -296,7 +301,6 @@ if __name__ == "__main__":
         return True
 
     # deleteStuff.py
-
 
     def test_delete_VertsFacesEdges():
         try:
@@ -354,7 +358,7 @@ if __name__ == "__main__":
 
         # 2 Edges (identified by their two vert coordinates)
         edges = [((-0.25, 0.25, 0.0), (-0.25, 0.5, 0.0)),  # 92
-                ((0.5, -0.5, 0.0), (0.5, -0.25, 0.0))]  # 64
+                 ((0.5, -0.5, 0.0), (0.5, -0.25, 0.0))]  # 64
         # 2. Faces (center coordinate)
         faces = [(0.375, -0.125, 0.0), (-0.625, 0.375, 0.0)]  # 4, 11
         # 3. Vertices
@@ -397,7 +401,7 @@ if __name__ == "__main__":
             if len(mesh.vertices) != specificDict["expectedResults"]["verts"] or len(mesh.edges) != specificDict["expectedResults"]["edges"] or len(mesh.polygons) != specificDict["expectedResults"]["faces"]:
                 print("\nError: see data below")
                 print("parameters:  " + specificDict["type"] + ", " +
-                    str(specificDict["deleteChildElements"])+"\n")
+                      str(specificDict["deleteChildElements"])+"\n")
                 print("expected / actualResult")
                 print(
                     "verts: "+str(specificDict["expectedResults"]["verts"])+"/"+str(len(mesh.vertices)))
@@ -424,11 +428,11 @@ if __name__ == "__main__":
 
         return True
 
-
     def test_coordinateStuff():
         try:
             #import coordinatesStuff
-            coordinatesStuff = bpy.data.texts["coordinatesStuff.py"].as_module()
+            coordinatesStuff = bpy.data.texts["coordinatesStuff.py"].as_module(
+            )
         except:
             print("COULDN'T IMPORT coordinatesStuff")
             return False
@@ -444,16 +448,15 @@ if __name__ == "__main__":
         bpy.ops.transform.translate(value=(-0.2, 0.5, 10), orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
                                     mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
         bpy.ops.transform.rotate(value=0.6, orient_axis='Z', orient_type='VIEW', orient_matrix=((0.7, 0.8, -0.1), (-0.3, 0.2, 0.9), (0.6, -0.6, 0.3)), orient_matrix_type='VIEW',
-                                mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+                                 mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
         bpy.ops.transform.resize(value=(0.001, 0.001, 0.001), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True,
-                                use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+                                 use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
         bpy.ops.object.mode_set(mode='OBJECT')
         coordinates = coordinatesStuff.getVertexCoordinates(C, mesh, "ALL")
         # after resizing, two vertices of the plane (if not diagonal) should have a distance of 0.002 meters
         if coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 6) == True or coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 2) == False:
             return False
         return True
-
 
     def test_everythingKeyFrames():
         try:
@@ -486,10 +489,9 @@ if __name__ == "__main__":
                 expectedLocation = round(origLocations[axis]+value, 5)
                 if currentLocation != expectedLocation:
                     print("Wrong locations found:" +
-                        str(currentLocation)+" "+str(expectedLocation))
+                          str(currentLocation)+" "+str(expectedLocation))
                     return False
         return True
-
 
     def test_vertexGroups():
         try:
@@ -578,8 +580,10 @@ if __name__ == "__main__":
         vertexGroups.removeVertsFromVertexGroup(
             context=C, vertexGroup=vg2, vertIndices=list_remove, validate=True)
 
-        vertsVG1 = vertexGroups.getVertsInVertexGroup(context=C, vertexGroup=vg1)
-        vertsVG2 = vertexGroups.getVertsInVertexGroup(context=C, vertexGroup=vg2)
+        vertsVG1 = vertexGroups.getVertsInVertexGroup(
+            context=C, vertexGroup=vg1)
+        vertsVG2 = vertexGroups.getVertsInVertexGroup(
+            context=C, vertexGroup=vg2)
 
         expectedVerts = list_uniform.copy()
         for weight, indexList in dict_specific.items():
@@ -649,7 +653,8 @@ if __name__ == "__main__":
         if obj.vertex_groups.active_index != vg3.index or obj.vertex_groups.active != vg3:
             return False
 
-        vg3Verts = vertexGroups.getVertsInVertexGroup(context=C, vertexGroup=vg3)
+        vg3Verts = vertexGroups.getVertsInVertexGroup(
+            context=C, vertexGroup=vg3)
         vg3Weights = vertexGroups.getVertexWeights(
             context=C, vertexGroup=vg3, vertexIndices=vg3Verts)
 
@@ -659,7 +664,6 @@ if __name__ == "__main__":
             if round(vg3Weights[vertIndex], 3) != unchaged_uniform_value:
                 return False
         return True
-
 
     def test_shapekeys():
         try:
@@ -691,16 +695,16 @@ if __name__ == "__main__":
             origCoordinates[vert.index] = [vert.co.x, vert.co.y, vert.co.z]
 
         referenceDict = {"list": [1.9],
-                        "mesh": [2.6],
-                        "dictionary": [3.5]
-                        }
+                         "mesh": [2.6],
+                         "dictionary": [3.5]
+                         }
         for refKey, smallList in referenceDict.items():
             referenceObj = createSubdivObj(subdivs, type="CUBE")
             smallList.append(referenceObj)
             C.view_layer.objects.active = referenceObj
             tValue = smallList[0]
             bpy.ops.transform.resize(value=(tValue, tValue, tValue), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=False,
-                                    use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
+                                     use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
             bpy.ops.transform.translate(value=(tValue+1, tValue+1, tValue+1), orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
                                         mirror=False, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
             bpy.ops.object.transform_apply(
@@ -737,7 +741,7 @@ if __name__ == "__main__":
                     basisSKvector = basisSK.data[vert.index].co.copy()
                     origVector = origCoordinates[vert.index]
                     for xyz in [0, 1, 2]:
-                        if round(origVector[xyz], 3) != round(basisSKvector[xyz],3):
+                        if round(origVector[xyz], 3) != round(basisSKvector[xyz], 3):
                             return False
 
                 # test if shapekey has the same coordinates as reference object mesh
@@ -746,7 +750,7 @@ if __name__ == "__main__":
                     SKVector = shKey.data[i].co.copy()
                     refMeshVector = refObj.data.vertices[i].co.copy()
                     for xyz in [0, 1, 2]:
-                        if round(SKVector[xyz], 3) != round(refMeshVector[xyz],3):
+                        if round(SKVector[xyz], 3) != round(refMeshVector[xyz], 3):
                             return False
             messStuffUp()
 
@@ -761,7 +765,8 @@ if __name__ == "__main__":
         4. unmute all except first shapekey
             - check if all are unmuted except the first
         """
-        referenceDictAsList = list(referenceDict.items()) #items() returns a set and you can't use indices on that
+        referenceDictAsList = list(referenceDict.items(
+        ))  # items() returns a set and you can't use indices on that
         firstSK = referenceDictAsList[0][1][3]
         secondSK = referenceDictAsList[1][1][3]
         thirdSK = referenceDictAsList[2][1][3]
@@ -793,11 +798,66 @@ if __name__ == "__main__":
 
         return True
 
+    def test_modifiers():
+        try:
+            #import modifiers
+            modifiers = bpy.data.texts["modifiers.py"].as_module()
+        except:
+            print("COULDN'T IMPORT modifiers")
+            return False
+        messStuffUp()
+        """
+        1. Add a few different modifiers
+        2. get all their positions
+        3. Check if the modifiers with first and last position are indeed at those positions
+        4. Try to put another modifier in last position
+        5. Check again
+        6. repeat 4 and 5, but this time with a "negative" position
+        """
+        obj = createSubdivObj(subdivisions=0, type="CUBE")
+        bpy.ops.object.modifier_add(type='EDGE_SPLIT')
+        bpy.ops.object.modifier_add(type='MASK')
+        bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
+        bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
+        bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
+        bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
+        messStuffUp()
+        positions = dict()  # {position: modifier}
+        for mod in obj.modifiers:
+            positions[modifiers.getModifierPositionInStack(
+                context=C, modifier=mod)] = mod
+        firstMod = positions[0]
+        lastMod = positions[len(obj.modifiers)-1]
+
+        C.view_layer.objects.active = obj
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):  
+            # hides any print statements
+            # Because the Blender code below will try to print a warning, but we don't want the user to see that
+            if bpy.ops.object.modifier_move_up(modifier=firstMod.name) != {'CANCELLED'} or bpy.ops.object.modifier_move_down(modifier=lastMod.name) != {'CANCELLED'}:
+                # trying to move a modifier up or down returns {'FINISHED'} if it can move up/down, and {'CANCELLED'} if it can't. (Meaning it already is at first/last position)
+                return False
+        messStuffUp()
+
+        # setting the second modifier to last position in stack
+        secondMod = positions[1]
+        thirdMod = positions[2]
+        modifiers.moveModiferToPositionInStack(
+            context=C, modifier=secondMod, position=len(obj.modifiers)-1)
+        lastPosPositive = modifiers.getModifierPositionInStack(
+            context=C, modifier=secondMod)
+        modifiers.moveModiferToPositionInStack(
+            context=C, modifier=thirdMod, position=-1)
+        lastPosNegative = modifiers.getModifierPositionInStack(
+            context=C, modifier=thirdMod)
+        if lastPosNegative != lastPosPositive or lastPosNegative != len(obj.modifiers)-1:
+            return False
+        return True
 
     x = True
     # fun as in function, not the joy I haven't experienced since attending highschool
     for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh,
-                test_delete_VertsFacesEdges, test_coordinateStuff, test_everythingKeyFrames, test_vertexGroups,test_shapekeys):
+                test_delete_VertsFacesEdges, test_coordinateStuff, test_everythingKeyFrames, test_vertexGroups, test_shapekeys,
+                test_modifiers):
 
         if fun() == True:
             None

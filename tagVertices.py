@@ -101,7 +101,7 @@ class TagVertices:
     @staticmethod
     # removes a datalayer
     def removeLayer(context,mesh, layerName):
-        """Removes a data layer that has been created by the tag() method. Not actually neccessary, but advisable.
+        """Removes a data layer that has been created by the tag() method. Not actually neccessary, but probably advisable.
 
         Parameters
         ----------

@@ -31,7 +31,7 @@ def createShapekey(context, obj, reference):
     origActiveIndex = obj.active_shape_key_index
     origActiveShapekey = obj.active_shape_key
 
-    newShapekey = obj.shape_key_add()
+    newShapekey = obj.shape_key_add(from_mix=False)
 
     obj.active_shape_key_index = origActiveIndex
     if obj.active_shape_key != origActiveShapekey:
