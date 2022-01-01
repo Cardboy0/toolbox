@@ -3,7 +3,7 @@ import bpy
 D = bpy.data
 
 
-def createRealMeshCopy(context, obj, frame="CURRENT", apply_transforms=True):
+def createRealMeshCopy(context, obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False):
     """Creates a (static) copy of your chosen mesh where basically every deformation has been applied. This includes modifiers, shapekeys, etc.
     Transformations (size, scale, rotation) can be excluded by setting the apply_transforms parameter to False
 
@@ -13,16 +13,19 @@ def createRealMeshCopy(context, obj, frame="CURRENT", apply_transforms=True):
         Most likely bpy.context
     obj : bpy.types.Object
         The object with your mesh.
-    frame : "CURRENT" or int, optional
+    frame : "CURRENT" or int
         The frame where your mesh has the desired shape, by default "CURRENT"
-    apply_transforms : bool, optional
+    apply_transforms : bool
         Whether you also want to apply transformations to your mesh (size, scale, rotation), by default True
+    keepVertexGroups : bool
+        Whether you want the mesh to keep the data of any vertex groups it currentely possesses. If True, vertex groups will reappear automatically when you assign the mesh to an object.
 
     Returns
     -------
     bpy.types.Mesh
         The newly created mesh
     """
+
     # frame stuff
     orig_frame = context.scene.frame_current
     if frame != "CURRENT" and frame != orig_frame:
@@ -30,6 +33,12 @@ def createRealMeshCopy(context, obj, frame="CURRENT", apply_transforms=True):
 
     dpGraph = context.evaluated_depsgraph_get()
     obj_eval = obj.evaluated_get(dpGraph)
+
+    if keepVertexGroups == False:
+        obj_eval.vertex_groups.clear()
+        # believe it or not, but by default any vertex groups will stay with the mesh and reappear when you assign it to an object
+        # probably because every vertex has a .groups attribute with any vertex group data.
+
     realMesh = D.meshes.new_from_object(obj_eval)
 
     # some notes: depsgraph takes modifiers and shapekeys into account, but NOT object transformations
