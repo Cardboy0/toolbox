@@ -1,5 +1,5 @@
 # toolbox
-A collection of Blender Python functions and classes for frequent tasks, currently including
+A collection of Blender Python functions and classes for frequent tasks a hobby developer might encounter, currently including
 - **selecting objects**
 - **deleting objects**
 - **dealing with Collections**
@@ -11,19 +11,29 @@ A collection of Blender Python functions and classes for frequent tasks, current
 - **dealing with keyframes (actions, fcurves)**
 - **dealing with vertex groups** 
 - **dealing with shape keys**
+- **dealing with modifiers**
+- some minor functions that help in testing
+
 - more might follow
 
 
-All functions include a 'context' parameter to pass to make it easier for people who plan to use them in their own operators.
+I try to code these functions and scripts as clean as possible, including:
+- proper documentation on how to use them
+- great performance (*many functions use foreach_set/foreach_get methods, that are like 10 times faster than normal loops*)
+- Almost never using bpy.ops (only if there's no alternative)  
+
+**HOWEVER**, please note:
+- I'm constantly adding and changing stuff, which includes renaming or moving functions. This might confuse users in some cases when they try to "update" their functions.
+
+
+Also, all functions include a 'context' parameter. This is to make proper usage in addon operators more easy.
 
 # source
-https://github.com/Cardboy0/toolbox
+https://github.com/Cardboy0/toolbox  
+(I also have a (decentely big) guide on scripting in Blender, ranging from basis to specific and advanced topics: https://docs.google.com/document/d/1Ph6HpkmEX9KWoPC6V1UVWJ1F37qj9NkIDNQRTP-uSII)
 
 
 # testing
-Because I realised that I'd rather step on a rusty nail then manually test each function or class again each time after I do some minor changes to it, I created a test script - **doesThisStuffStillWork.py**
-It tries to use the other scripts in this folder for particular test cases and then simply checks the results.
-You can run it inside blender and check out the console for any encountered problems.
-
-Note: For the test script to be able to import the other scripts, you need to have all scripts open in the Blender text editor. This is kind of stupid, but means you don't need to worry about any filepath issues or save stuff.
+- if you want to "test" the scripts in this repository - a.k.a. check if they work for you as intended - check out the **doesThisStuffWorkForMe** subfolder (there's another *readme* file inside).
+- if you think you can improve a function or class, you can also do the test stuff above to check if your edited code works as intended.
 
