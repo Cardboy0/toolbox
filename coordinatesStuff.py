@@ -57,4 +57,5 @@ def getVertexCoordinates(context, mesh, vertIndices="ALL"):
         vertIndices = list(range(len(mesh.vertices)))
     for vertIndex in vertIndices:
         vertCoordinates[vertIndex] = mesh.vertices[vertIndex].co.copy()
+    # If my old notes are correct, doing it like this (iterating trough all vertices and using co.copy()) is approx. 30% faster than using foreach_get() to get the x,y,z values and then creating new Vectors from each of those triplets.
     return vertCoordinates

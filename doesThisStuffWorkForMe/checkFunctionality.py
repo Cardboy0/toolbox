@@ -167,7 +167,7 @@ if __name__ == "__main__":
         bpy.context.window.scene = origScene
         print("Attention, Collections.py needs manual supervision:")
         print("(The script also deletes these collections if they should already exist from a previous test run)")
-        print("This is the correct result that you should appear in your scene:")
+        print("This is the correct result that you should appear in scene '"+origScene.name+"':")
         text = [
             "master-collection (of scene)",
             "----coll_1",
@@ -282,8 +282,225 @@ if __name__ == "__main__":
         except:
             print("COULDN'T IMPORT createRealMesh")
             return False
+        """
+        What to test:
+            - do materials, textures, shapekeys, vertex groups, - basically everything that isn't a vertex, edge or polygon - get fully removed from the new mesh? Including these:
+                - materials
+                - textures              - TODO not yet implemented
+                - shapekeys
+                - vertex groups
+                - parents
+                - constraints
+                - UV layers             - TODO not yet implemented (C.object.data.uv_layers)
+                - vertex colors         - TODO not yet implemented (C.object.data.vertex_colors)
+                - normals               - TODO not yet implemented
+                - transformations     
+                - custom properties
+                - (ignore particles and hair)
+            - Does, no matter the source of animation, the result truly match to what geometry you see in viewport, and at that exact frame?
+            - Do vertex indices change?
+
+        How to test:
+            - for each different "type" of deformation listed above check
+                1. Did the property disappear
+                2. Does the result mesh look like the original one with that property?
+                    3. By comparing the coordinates per vertex index we already can be sure that vertex indices didn't change
+
+        """
+        def isVectorClose(v1, v2):
+            length = (v1-v2).length
+            return 0 == round(length, 3)
+
+        def areSameMesh(mesh1, mesh2):
+            if len(mesh1.vertices) != len(mesh2.vertices):
+                return False
+            for (v1, v2) in zip(mesh1.vertices, mesh2.vertices):
+                if isVectorClose(v1.co, v2.co) == False:
+                    return False
+            return True
+
+        def selectObjs(objs=[]):
+            # first in list will be set as active
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in objs:
+                obj.select_set(True)
+            C.view_layer.objects.active = objs[0]
+
         testHelpers.messAround(switchScenes=True)
-        print("attention, createRealMesh doesn't have any testing implemented yet.")
+
+        def checkMaterials(obj):
+            selectObjs([obj])
+            mat = D.materials.new("test")
+            obj.data.materials.append(mat)
+            # bpy.ops.material.new() #this doesn't work to create materials, probably some issue with context
+            if len(obj.material_slots) != 1 and len(obj.data.materials) != 1:
+                print(list(obj.material_slots))
+                print(list(obj.data.materials))
+                return False
+            newMeshWithoutMat = createRealMesh.createRealMeshCopy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False, keepMaterials=False)
+            newObjWithoutMat = createRealMesh.createNewObjforMesh(
+                context=C, name="newObj", mesh=newMeshWithoutMat)
+            newMeshWithMat = createRealMesh.createRealMeshCopy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False, keepMaterials=True)
+            newObjWithMat = createRealMesh.createNewObjforMesh(
+                context=C, name="newObj", mesh=newMeshWithMat)            
+
+
+            if len(newObjWithoutMat.material_slots) != 0 or len(newMeshWithoutMat.materials) != 0:
+                return False
+            if len(newObjWithMat.material_slots) == 0 or len(newMeshWithMat.materials) == 0:
+                return False
+            if (areSameMesh(obj.data, newMeshWithoutMat) == False) or (areSameMesh(obj.data, newMeshWithMat) == False):
+                return False
+            return True
+
+        def checkTextures(obj):
+            # I know so little about textures that I didn't even manage to create a single one
+            return True
+
+        def checkShapeKeys(obj):
+            bpy.ops.object.shape_key_add(from_mix=False)  # Basis
+            bpy.ops.object.shape_key_add(from_mix=False)  # new One
+            skBasis = obj.data.shape_keys.reference_key
+            for sk in obj.data.shape_keys.key_blocks:
+                if sk != skBasis:
+                    sk2 = sk
+            sk2.data[1].co = [1.3, 41, 2.7]  # coordinate of vertex #1
+            sk2.data[3].co = [0, 1, 67]
+            sk2.value = 1
+            newMesh = createRealMesh.createRealMeshCopy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
+            newObj = createRealMesh.createNewObjforMesh(
+                context=C, name="newObj", mesh=newMesh)
+            selectObjs([obj])
+            bpy.context.object.active_shape_key_index = 0  # index of BasisSK
+            bpy.ops.object.shape_key_remove(all=False)
+            bpy.ops.object.shape_key_remove(all=False)
+            # both shapekeys removed, but no obj shape = shape of sk2
+            if areSameMesh(obj.data, newMesh) == False:
+                return False
+            return True
+
+        def checkVertexGroups(obj):
+            bpy.ops.object.vertex_group_add()
+            bpy.ops.object.mode_set_with_submode(
+                mode='EDIT', mesh_select_mode={"VERT"})
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.object.vertex_group_assign()
+            bpy.ops.object.mode_set(mode='OBJECT')
+            if len(obj.data.vertices[0].groups) == 0:
+                return False
+            obj.data.vertices[0].groups[0].weight = 0.5
+            for b in (True, False, True, False):  # test if keepVertexGroups parameter works as well
+                newMesh = createRealMesh.createRealMeshCopy(
+                    context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=b)
+                newObj = createRealMesh.createNewObjforMesh(
+                    context=C, name="newObj", mesh=newMesh)
+                if (not (len(newMesh.vertices[0].groups) == 0 and len(newObj.vertex_groups) == 0)) == (not b):
+                    print("B")
+                    return False
+                if areSameMesh(obj.data, newMesh) == False:
+                    print("C")
+                    return False
+                if b==True and (round(newMesh.vertices[0].groups[0].weight, 4) != round(0.5, 4)):
+                    print("D")
+                    return False
+            return True
+
+        def checkParents(obj):
+            parentObj = testHelpers.createSubdivObj(
+                subdivisions=0, type="PLANE")
+            selectObjs([parentObj, obj])
+            bpy.ops.object.parent_set(type='OBJECT', keep_transform=False)
+            parentObj.location = [1, 2, 3]
+            if obj.parent != parentObj:
+                return False
+            newMesh = createRealMesh.createRealMeshCopy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
+            newObj = createRealMesh.createNewObjforMesh(
+                context=C, name="newObj", mesh=newMesh)
+            if newObj.parent != None:
+                return False
+            selectObjs([obj])
+            bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
+            bpy.ops.object.transform_apply(
+                location=True, rotation=True, scale=True)
+            if areSameMesh(newMesh, obj.data) == False:
+                return False
+            return True
+
+        def checkConstraints(obj):
+            constrainObj = testHelpers.createSubdivObj(
+                subdivisions=0, type="CUBE")
+            constrainObj.location = [2, 3, 4]
+            selectObjs([obj])
+            bpy.ops.object.constraint_add(type='COPY_LOCATION')
+            newConstraint = obj.constraints[0]
+            newConstraint.target = constrainObj
+            newMesh = createRealMesh.createRealMeshCopy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
+            newObj = createRealMesh.createNewObjforMesh(
+                context=C, name="newObj", mesh=newMesh)
+            selectObjs([obj])
+            bpy.ops.constraint.apply(
+                constraint=newConstraint.name, owner='OBJECT')
+            bpy.ops.object.transform_apply(
+                location=True, rotation=True, scale=True)
+            if len(newObj.constraints) != 0:
+                return False
+            if areSameMesh(newMesh, obj.data) == False:
+                return False
+            return True
+
+        def checkTransformations(obj):
+            obj.location = [3, 4, 5]
+            obj.delta_location = [1, 1.5, 7]
+            obj.rotation_euler = [2, 5, 1]
+            obj.delta_rotation_euler = [9, 8, 0]
+            obj.scale = [5, 6, 7]
+            obj.delta_scale = [0.5, 0.2, 0.1]
+            newMesh = createRealMesh.createRealMeshCopy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
+            newObj = createRealMesh.createNewObjforMesh(
+                context=C, name="newObj", mesh=newMesh)
+            selectObjs([obj])
+            bpy.ops.object.transforms_to_deltas(mode='ALL')
+            obj.location = obj.delta_location.copy()
+            obj.delta_location = [0, 0, 0]
+            obj.rotation_euler = obj.delta_rotation_euler.copy()
+            obj.delta_rotation_euler = [0, 0, 0]
+            obj.scale = obj.delta_scale.copy()
+            obj.delta_scale = [1, 1, 1]
+            bpy.ops.object.transform_apply(
+                location=True, rotation=True, scale=True)
+            # believe it or not, but it seems like you cannot just "apply" delta transforms like with normal transforms
+            if areSameMesh(obj.data, newMesh) == False:
+                return False
+            return True
+
+        def checkCustomProperties(obj):
+            # "cycles" seems to be standart property, so at least a length of 1
+            originalAmount = len(C.object.data.keys())
+            bpy.ops.wm.properties_add(data_path="object.data")
+            newMesh = createRealMesh.createRealMeshCopy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
+            newObj = createRealMesh.createNewObjforMesh(
+                context=C, name="newObj", mesh=newMesh)
+            if len(newMesh.keys()) != originalAmount:
+                return False
+            return True
+
+        for func in (checkMaterials, checkTextures, checkShapeKeys, checkVertexGroups, checkParents, checkConstraints, checkTransformations, checkCustomProperties):
+            testHelpers.messAround(switchScenes=False)
+            obj = testHelpers.createSubdivObj(subdivisions=3, type="CUBE")
+            obj.location = [0, 0, 0]
+            obj.rotation_euler = [0, 0, 0]
+            obj.scale = [1, 1, 1]
+            if func(obj) == False:
+                print("subTest of "+func.__name__ + " failed!")
+                return False
+
         return True
 
     # deleteStuff.py
