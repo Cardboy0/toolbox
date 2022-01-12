@@ -3,7 +3,7 @@ import bpy
 D = bpy.data
 
 
-def selectObjects(context,object_list, deselectOthers=True, active=None):
+def selectObjects(context, object_list, deselectOthers=True, active=None):
     """Use this to select multiple objects and set a specific object as active.
 
     You can also use this to deselect all objects by giving an empty list.
@@ -33,4 +33,7 @@ def selectObjects(context,object_list, deselectOthers=True, active=None):
         obj.select_set(True)
     # this value accepts None as well
     # Does NOT work from other scenes.
-    context.view_layer.objects.active = active
+    if active == None:
+        context.view_layer.objects.active = object_list[0]
+    else:
+        context.view_layer.objects.active = active

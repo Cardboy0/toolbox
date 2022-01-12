@@ -59,17 +59,33 @@ if __name__ == "__main__":
         # selection depends on the scene
         testHelpers.messAround(switchScenes=False)
         bpy.ops.mesh.primitive_plane_add()
+        planeOne = C.object
+        bpy.ops.mesh.primitive_plane_add()
+        planeTwo = C.object
         bpy.ops.mesh.primitive_plane_add()
         bpy.ops.object.select_all(action='SELECT')
-        selectObjects.selectObjects(C, [cube], True, cube)
-        if cube in C.selected_objects and len(C.selected_objects) == 1 and C.object == cube and C.active_object == cube:
-            return True
-        else:
-            print(cube in C.selected_objects)
-            print(len(C.selected_objects) == 1)
-            print(C.object == cube)
-            print(C.active_object == cube)
+        bpy.ops.object.select_all(action='DESELECT')
+        selectObjects.selectObjects(C, [cube], True, None)
+        if C.object != cube:
+            print(1)
             return False
+        selectObjects.selectObjects(C, [planeOne, planeTwo], False, planeTwo)
+
+        if C.object != planeTwo or C.active_object != planeTwo:
+            print(C.view_layer.active.name)
+            print(C.object.name)
+            print(C.active_object.name)
+            print(2)
+            return False
+        if len(C.selected_objects) != 3:
+            print(3)
+            return False
+        for obj in (cube, planeOne, planeTwo):
+            if not (obj in C.selected_objects):
+                print(4)
+                return False
+
+        return True
 
     # deleteStuff.py
 
@@ -167,7 +183,8 @@ if __name__ == "__main__":
         bpy.context.window.scene = origScene
         print("Attention, Collections.py needs manual supervision:")
         print("(The script also deletes these collections if they should already exist from a previous test run)")
-        print("This is the correct result that you should appear in scene '"+origScene.name+"':")
+        print("This is the correct result that you should appear in scene '" +
+              origScene.name+"':")
         text = [
             "master-collection (of scene)",
             "----coll_1",
@@ -344,8 +361,7 @@ if __name__ == "__main__":
             newMeshWithMat = createRealMesh.createRealMeshCopy(
                 context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False, keepMaterials=True)
             newObjWithMat = createRealMesh.createNewObjforMesh(
-                context=C, name="newObj", mesh=newMeshWithMat)            
-
+                context=C, name="newObj", mesh=newMeshWithMat)
 
             if len(newObjWithoutMat.material_slots) != 0 or len(newMeshWithoutMat.materials) != 0:
                 return False
@@ -403,7 +419,7 @@ if __name__ == "__main__":
                 if areSameMesh(obj.data, newMesh) == False:
                     print("C")
                     return False
-                if b==True and (round(newMesh.vertices[0].groups[0].weight, 4) != round(0.5, 4)):
+                if b == True and (round(newMesh.vertices[0].groups[0].weight, 4) != round(0.5, 4)):
                     print("D")
                     return False
             return True

@@ -42,7 +42,7 @@ def createRealMeshCopy(context, obj, frame="CURRENT", apply_transforms=True, kee
     realMesh = D.meshes.new_from_object(obj_eval)
 
     if apply_transforms == True or keepVertexGroups == False or keepMaterials == False:
-        #TODO: Check how much more time creating tempObj requires. I did some testing and got weird, unusable results, but it seems like without tempObj it's at least in some cases twice as fast.
+        # TODO: Check how much more time creating tempObj requires. I did some testing and got weird, unusable results, but it seems like without tempObj it's at least in some cases twice as fast.
         tempObj = D.objects.new("temporary object", realMesh)
         # As written above, we should only use obj_eval for getting information, not changing anything.
         # So we create a temporary object to act as a substitute for certain operations, and delete it afterwards again.
