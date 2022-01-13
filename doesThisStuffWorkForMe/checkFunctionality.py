@@ -713,6 +713,16 @@ if __name__ == "__main__":
                     print("Wrong locations found:" +
                           str(currentLocation)+" "+str(expectedLocation))
                     return False
+
+        fcurve = action.fcurves.new("scale", index=0)
+        everythingKeyFrames.createKeyFramesFast(
+            C, fcurve, {-1: 3, 0: -2, 4: 0.5}, True)
+        if len(fcurve.keyframe_points) != 2:
+            return False
+        if fcurve.keyframe_points[0].co.x < 0 or fcurve.keyframe_points[1].co.x < 0:
+            return False
+        print(obj.name)
+
         return True
 
     def test_vertexGroups():
@@ -1085,12 +1095,16 @@ if __name__ == "__main__":
     for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh,
                 test_delete_VertsFacesEdges, test_coordinateStuff, test_everythingKeyFrames, test_vertexGroups, test_shapekeys,
                 test_modifiers):
-
-        if fun() == True:
-            None
-        else:
+        try:
+            if fun() == True:
+                None
+            else:
+                print("\n\n")
+                print("Test negative in "+fun.__name__+" !")
+                x = False
+        except:
             print("\n\n")
-            print("Error in "+fun.__name__+" !")
+            print("Exception occured in "+fun.__name__+" !")
             x = False
 
     if x == True:
