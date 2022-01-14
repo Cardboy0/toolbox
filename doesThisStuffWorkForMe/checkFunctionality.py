@@ -714,15 +714,6 @@ if __name__ == "__main__":
                           str(currentLocation)+" "+str(expectedLocation))
                     return False
 
-        fcurve = action.fcurves.new("scale", index=0)
-        everythingKeyFrames.createKeyFramesFast(
-            C, fcurve, {-1: 3, 0: -2, 4: 0.5}, True)
-        if len(fcurve.keyframe_points) != 2:
-            return False
-        if fcurve.keyframe_points[0].co.x < 0 or fcurve.keyframe_points[1].co.x < 0:
-            return False
-        print(obj.name)
-
         return True
 
     def test_vertexGroups():

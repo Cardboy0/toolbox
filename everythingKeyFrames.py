@@ -45,7 +45,7 @@ def getOrCreateAction(context, something):
             "Something went wrong when trying to get the action of "+something.__str__())
 
 
-def createKeyFramesFast(context, fcurve, values, ignoreNegativeFrames=False):
+def createKeyFramesFast(context, fcurve, values):
     """If you want to create keyframes for a fcurve in a fast way.
 
     Attention: Should not be used to add keyframes to an fcurve if any keyframes already exist.
@@ -61,9 +61,6 @@ def createKeyFramesFast(context, fcurve, values, ignoreNegativeFrames=False):
         If list: [frame1,value1, frame2,value2, ...] \n
         If dict: {frame1: value1, frame2: value2, ...} \n
         Using a list is faster than using a dictionary
-    ignoreNegativeFrames : bool
-        If True, any frame of the supplied values that is negative will get ignored.
-        This might decrease the speed of this function.
     """
 
     # based on https://blender.stackexchange.com/questions/92287/editing-fcurve-keyframe-points-in-fast-mode
@@ -73,15 +70,6 @@ def createKeyFramesFast(context, fcurve, values, ignoreNegativeFrames=False):
         for key, value in values.items():
             x.extend([key, value])
         values = x
-
-    if ignoreNegativeFrames == True:
-        positiveValues = []
-        for i in range(0, len(values), 2):
-            frame = values[i]
-            value = values[i+1]
-            if values[i] >= 0:
-                positiveValues.extend([frame, value])
-        values = positiveValues
 
     fcurve.keyframe_points.add(count=len(values)/2)
     fcurve.keyframe_points.foreach_set("co", values)
