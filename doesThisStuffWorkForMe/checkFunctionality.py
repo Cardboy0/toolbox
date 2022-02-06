@@ -120,17 +120,37 @@ if __name__ == "__main__":
     def test_createCollection():
         # Try to create this:
         # master-collection (of scene)
-        # ----coll_1
-        # ----coll_2
-        # --------coll_2_1
-        # --------coll_2_2
-        # ------------ obj1
-        # ----coll_3
+        # ----coll_apple
+        # --------obj2
+        # --------coll_blueberry
+        # ----coll_banana
+        # --------coll_blueberry
+        # --------coll_babaco
+        # -------------obj1
+        # -------------obj2
+        # ----coll_cherry
         # --------obj1
-        # ----coll_4
-        # --------coll_2_1
-        # obj1 and coll_2_1 are both present twice because you can link collections and objects to more than one collection
+        # --------obj2
+        # ----coll_dewberry
+        # --------obj2
+        # --------coll_blueberry
         #
+        # obj1, obj2 and coll_blueberry present multiple times because you can link collections and objects to more than one collection
+        #
+        # For testing, we only look at the parents an object/collection has.
+        # From the sketch above, we can assume the following facts for testing:
+        # coll_apple has 1 parent: master-collection
+        # coll_banana has 1 parent: master-collection
+        # coll_cherry has 1 parent: master-collection
+        # coll_dewberry has 1 parent: master-collection
+        #
+        # coll_blueberry has 3 parents: coll_apple, coll_banana, coll_dewberry
+        # coll_babaco has 1 parent: coll_banana
+        #
+        # obj1 has 2 parents: coll_cherry, coll_babaco
+        # obj2 has 4 parents: coll_apple, coll_cherry, coll_dewberry, coll_babaco
+        #
+
         try:
             import Collections
             importlib.reload(Collections)
@@ -141,8 +161,8 @@ if __name__ == "__main__":
         testHelpers.messAround(switchScenes=True)
         origScene = C.scene
         # delete pre-existing test-results
-        deleteCollections = ["coll_1", "coll_2",
-                             "coll_2_1", "coll_2_2", "coll_3", "coll_4"]
+        deleteCollections = ["coll_apple", "coll_banana",
+                             "coll_blueberry", "coll_babaco", "coll_cherry", "coll_dewberry"]
         for collName in deleteCollections:
             try:
                 D.collections.remove(D.collections[collName])
@@ -162,42 +182,84 @@ if __name__ == "__main__":
         bpy.ops.mesh.primitive_ico_sphere_add()
         obj1 = C.object
         obj1.name = "obj1"
-        coll_1 = Collections.createCollection(
-            C, "coll_1", origScene.collection)
-        coll_2 = Collections.createCollection(
-            C, "coll_2", origScene.collection)
+        bpy.ops.mesh.primitive_ico_sphere_add()
+        obj2 = C.object
+        obj2.name = "obj2"
+
+        coll_apple = Collections.createCollection(
+            C, "coll_apple", origScene.collection)
+        coll_banana = Collections.createCollection(
+            C, "coll_banana", origScene.collection)
         # should only exist in current (wrong) scene
         coll_xxxx = Collections.createCollection(C, "coll_xxxx", "MASTER")
-        coll_3 = Collections.createCollection(C, "coll_3", "MASTER")
+        coll_cherry = Collections.createCollection(C, "coll_cherry", "MASTER")
+
         Collections.linkCollectionToCollections(
-            C, coll_3, origScene.collection)
-        coll_4 = Collections.createCollection(
-            C, "coll_4", origScene.collection)
-        coll_2_1 = Collections.createCollection(C, "coll_2_1", coll_4)
-        coll_2_2 = Collections.createCollection(C, "coll_2_2", coll_2)
-        Collections.linkCollectionToCollections(C, coll_2_1, [coll_4, coll_2])
-        Collections.linkObjectToCollections(C, obj1, [coll_1, coll_4])
-        Collections.linkObjectToCollections(C, obj1, [coll_2_2, coll_3])
+            C, coll_cherry, origScene.collection, keepLinks=False)
+
+        coll_dewberry = Collections.createCollection(
+            C, "coll_dewberry", origScene.collection)
+        coll_blueberry = Collections.createCollection(
+            C, "coll_blueberry", coll_dewberry)
+        coll_babaco = Collections.createCollection(
+            C, "coll_babaco", coll_banana)
+
+        Collections.linkCollectionToCollections(
+            C, coll_blueberry, [coll_dewberry, coll_banana], keepLinks=False)
+        Collections.linkCollectionToCollections(
+            C, coll_blueberry, coll_apple, keepLinks=True)
+
+        Collections.linkObjectToCollections(
+            C, obj1, [coll_apple, coll_dewberry], keepLinks=False)
+        Collections.linkObjectToCollections(
+            C, obj2, [coll_apple, coll_dewberry], keepLinks=False)
+        Collections.linkObjectToCollections(
+            C, obj1, [coll_babaco, coll_cherry], keepLinks=False)
+        Collections.linkObjectToCollections(
+            C, obj2, [coll_babaco, coll_cherry], keepLinks=True)
+
+        masterColl = origScene.collection  # of the current scene
 
         # reset the scene to original
-        bpy.context.window.scene = origScene
-        print("Attention, Collections.py needs manual supervision:")
-        print("(The script also deletes these collections if they should already exist from a previous test run)")
-        print("This is the correct result that you should appear in scene '" +
-              origScene.name+"':")
-        text = [
-            "master-collection (of scene)",
-            "----coll_1",
-            "----coll_2",
-            "--------coll_2_1",
-            "--------coll_2_2",
-            "------------ obj1",
-            "----coll_3",
-            "--------obj1",
-            "----coll_4",
-            "--------coll_2_1"]
-        for str in text:
-            print(str)
+        # for some reason doesn't work anymore: it will show you that it successfully switched, but after the script has finished you will see it hasn't. But it isn't important, so ignore it.
+        C.window.scene = origScene
+
+        # testing - this is based on the assumptions in the notes at the beginning
+        # note that you can't test "collectionX in collectionY.children". Instead you need to write "collectionX.name in collectionY.children"
+        for coll in [coll_apple, coll_banana, coll_cherry, coll_dewberry]:
+            if (coll.name in masterColl.children) == False or coll.users != 1:
+                return False
+
+        for coll in [coll_apple, coll_banana, coll_dewberry]:
+            if (coll_blueberry.name in coll.children) == False or coll_blueberry.users != 3:
+                return False
+
+        if (coll_babaco.name in coll_banana.children) == False or coll_babaco.users != 1:
+            return False
+
+        if set(obj1.users_collection) != set([coll_cherry, coll_babaco]):
+            return False
+
+        if set(obj2.users_collection) != set([coll_apple, coll_cherry, coll_dewberry, coll_babaco]):
+            return False
+
+        # print("Attention, Collections.py needs manual supervision:")
+        # print("(The script also deletes these collections if they should already exist from a previous test run)")
+        # print("This is the correct result that you should appear in scene '" +
+        #       origScene.name+"':")
+        # text = [
+        #     "master-collection (of scene)",
+        #     "----coll_1",
+        #     "----coll_2",
+        #     "--------coll_2_1",
+        #     "--------coll_2_2",
+        #     "------------ obj1",
+        #     "----coll_3",
+        #     "--------obj1",
+        #     "----coll_4",
+        #     "--------coll_2_1"]
+        # for str in text:
+        #     print(str)
         return True
 
     # tagVertices.py
@@ -1093,9 +1155,10 @@ if __name__ == "__main__":
                 print("\n\n")
                 print("Test negative in "+fun.__name__+" !")
                 x = False
-        except:
+        except Exception as exception:
             print("\n\n")
             print("Exception occured in "+fun.__name__+" !")
+            print("message:\n"+str(exception))
             x = False
 
     if x == True:
