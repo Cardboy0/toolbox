@@ -1,7 +1,6 @@
 import bpy
 import warnings
 
-D = bpy.data
 
 
 def createShapekey(context, obj, reference):

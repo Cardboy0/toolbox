@@ -2,8 +2,6 @@ import bpy
 import random
 import bmesh
 #import math
-D = bpy.data
-
 
 class TagVertices:
     """

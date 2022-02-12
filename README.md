@@ -20,7 +20,7 @@ A collection of Blender Python functions and classes for frequent tasks a hobby 
 I try to code these functions and scripts as clean as possible, including:
 - proper documentation on how to use them
 - great performance (*many functions use foreach_set/foreach_get methods, that are like 10 times faster than normal loops*)
-- Almost never using bpy.ops (only if there's no alternative)  
+- Almost never using bpy.ops (only if there's no alternative) 
 
 **HOWEVER**, please note:
 - I'm constantly adding and changing stuff, which includes renaming or moving functions. This might confuse users in some cases when they try to "update" their functions.
@@ -36,4 +36,5 @@ https://github.com/Cardboy0/toolbox
 # testing
 - if you want to "test" the scripts in this repository - a.k.a. check if they work for you as intended - check out the **doesThisStuffWorkForMe** subfolder (there's another *readme* file inside).
 - if you think you can improve a function or class, you can also do the test stuff above to check if your edited code works as intended.
+
 

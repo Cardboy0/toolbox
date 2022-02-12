@@ -1,6 +1,5 @@
 import bpy
 
-D = bpy.data
 
 # as the name implies, is meant to deal with vertex groups
 

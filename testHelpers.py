@@ -3,8 +3,6 @@ import bpy
 import time
 
 
-D = bpy.data
-
 #########################################################################################
 ###############                                                  ########################
 ###############Functions you may want to use for testing purposes########################
@@ -93,9 +91,9 @@ def messAround(switchScenes=True):
     # after deleting no object will be selected or active, so no mode can be set and will give us an error
     if switchScenes == True:
         currentScene = bpy.context.scene
-        if len(D.scenes) == 1:
+        if len(bpy.data.scenes) == 1:
             bpy.ops.scene.new(type='NEW')
-        for scene in D.scenes:
+        for scene in bpy.data.scenes:
             if scene != currentScene:
                 bpy.context.window.scene = scene
         bpy.ops.mesh.primitive_cube_add()

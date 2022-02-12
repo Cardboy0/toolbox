@@ -1,7 +1,5 @@
 import bpy
 
-D = bpy.data
-
 # for dealing with collections in general (but not viewlayer collections)
 
 
@@ -69,8 +67,8 @@ def linkCollectionToCollections(context, coll, collections, keepLinks=False):
         # Unlike objects, collections don't have a .users_collection property. This means we will have to do some searching.
 
         # important: D.collections doesn't have ALL the collections, the master collections of each scene are not included and thus must be added manually
-        allCollections = set(D.collections)
-        for scene in D.scenes:
+        allCollections = set(bpy.data.collections)
+        for scene in bpy.data.scenes:
             # adding the master collections
             allCollections.add(scene.collection)
 
@@ -124,6 +122,6 @@ def createCollection(context, name, parentCollection="MASTER", avoidDuplicates=F
         if index != -1:
             return parentCollection.children[index]
 
-    newCollection = D.collections.new(name=name)
+    newCollection = bpy.data.collections.new(name=name)
     parentCollection.children.link(newCollection)
     return newCollection

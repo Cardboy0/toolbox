@@ -1,7 +1,5 @@
 import bpy
 
-D = bpy.data
-
 
 # deals with all (or most) things keyframes (-> fcurves)
 
@@ -36,7 +34,7 @@ def getOrCreateAction(context, something):
             something.animation_data_create()
         if hasattr(something.animation_data, 'action') == False or something.animation_data.action == None:
             # create new action
-            newAction = D.actions.new("custom created action")
+            newAction = bpy.data.actions.new("custom created action")
             something.animation_data.action = newAction
             # this feels dirty, but I don't have a better alternative
         return something.animation_data.action

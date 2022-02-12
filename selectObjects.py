@@ -1,7 +1,5 @@
 import bpy
 
-D = bpy.data
-
 
 def selectObjects(context, object_list, deselectOthers=True, active=None):
     """Use this to select multiple objects and set a specific object as active.

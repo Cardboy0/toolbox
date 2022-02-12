@@ -1,7 +1,5 @@
 import bpy
 
-D = bpy.data
-
 
 def getModifierPositionInStack(context, modifier):
     """The index of a modifier in the stack of the object it belongs to. That's the thing you see in the "modifier properties" tab.

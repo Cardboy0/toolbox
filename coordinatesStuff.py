@@ -1,8 +1,6 @@
 import bpy
 import mathutils
 
-D = bpy.data
-
 # for things related to coordinates in Blender
 
 

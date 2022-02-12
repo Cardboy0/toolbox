@@ -1,8 +1,6 @@
 import bpy
 import bmesh
 
-D = bpy.data
-
 
 # functions for deleting different kinds of things in Blender
 
@@ -21,8 +19,8 @@ def deleteObjectAndMesh(context,obj):
         Object to delete
     """
     mesh = obj.data
-    D.objects.remove(obj)
-    D.meshes.remove(mesh)
+    bpy.data.objects.remove(obj)
+    bpy.data.meshes.remove(mesh)
 
 
 # Small note: You can get a list of all indices of e.g. the mesh vertices by writing myIndexList = list( range( len( mesh.vertices)))
