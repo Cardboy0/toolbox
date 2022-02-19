@@ -5,6 +5,7 @@
 # I apologize for the stroke you will have when trying to understand some of the logic I did here due to lacking documentation at points.
 
 
+
 if __name__ == "__main__":
 
     import bpy
@@ -716,8 +717,9 @@ if __name__ == "__main__":
             importlib.reload(coordinatesStuff)
             # coordinatesStuff = bpy.data.texts["coordinatesStuff.py"].as_module(
             # )
-        except:
+        except Exception as exception:
             print("COULDN'T IMPORT coordinatesStuff")
+            print("Exception message:\n"+str(exception))
             return False
         testHelpers.messAround(switchScenes=True)
         bpy.ops.mesh.primitive_plane_add()
@@ -739,6 +741,84 @@ if __name__ == "__main__":
         # after resizing, two vertices of the plane (if not diagonal) should have a distance of 0.002 meters
         if coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 6) == True or coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 2) == False:
             return False
+
+        try:
+            # I ain't gonna code another function with bpy.ops that does this stuff
+            # because I tried
+            # and ran into weird and annoying bugs
+            import createRealMesh
+            importlib.reload(createRealMesh)
+        except:
+            print("Couldn't import a required module (createRealMesh)")
+            return False
+
+        # Testing the rotation handler class
+        RotHandler = coordinatesStuff.RotationHandling
+
+        objSuzanneBasic = testHelpers.createSubdivObj(
+            0, "MONKEY")  # without any rotations
+
+        differentRotations = {"ZXY": ("rotation_euler", mathutils.Euler((1, 5, 2), "ZXY"), False),
+                              "QUATERNION": ("rotation_quaternion", mathutils.Quaternion(
+                                  (0.5, 2.5112, 0.003), 7), False),
+                              "XZY": ("rotation_euler", mathutils.Euler((7, 2, 6), "XZY"), False),
+                              "AXIS_ANGLE": ("rotation_axis_angle", (9, 6, 3.512, 4.4444), False),
+                              "AXIS_ANGLE": ("rotation_axis_angle", (mathutils.Vector((5, 7, 1)), 9), True)
+                              }
+
+        for i in [True, False]:
+
+            for (rotation_mode, vectorNameAndValues) in differentRotations.items():
+                attrName = vectorNameAndValues[0]
+                rVector = vectorNameAndValues[1]
+                specialAxisAngle = vectorNameAndValues[2]
+                # requires special handling because otherwise exceptions will arise
+
+                objSuzanneComparison = testHelpers.createSubdivObj(0, "MONKEY")
+                objSuzanneComparison.rotation_mode = rotation_mode
+                if specialAxisAngle == False:
+                    setattr(objSuzanneComparison, attrName, rVector)
+                else:
+                    setattr(objSuzanneComparison,
+                            "rotation_axis_angle", (9, 5, 7, 1))
+
+                if testHelpers.areObjsTheSame(context=C, obj1=objSuzanneBasic, obj2=objSuzanneComparison, mute=True) == True:
+                    # if hasSameTransformations(objSuzanneBasic, objSuzanneComparison) == True:
+                    print("x")
+                    return False
+
+                for (rotation_mode_inner, vectorNameAndValues) in differentRotations.items():
+                    newAttrName = vectorNameAndValues[0]
+                    newVector = vectorNameAndValues[1]
+
+                    objSuzanneWithConvertedRotation = testHelpers.createSubdivObj(
+                        0, "MONKEY")
+                    objSuzanneWithConvertedRotation.rotation_mode = rotation_mode_inner
+
+                    if testHelpers.areObjsTheSame(context=C, obj1=objSuzanneComparison, obj2=objSuzanneWithConvertedRotation, mute=True) == True:
+                        return False
+
+                    rotHandler = RotHandler()
+                    rotHandler.setRotationTypeOfSourceVector(C, rVector)
+                    rotHandler.setRotationTypeOfTargetVector(C, newVector)
+                    if i == False and specialAxisAngle == False:
+                        # important especially in the context of axis_angle, because we supply a tuple but the object will have a bpy_float array instead
+                        realRVector = getattr(objSuzanneComparison, attrName)
+                    else:
+                        realRVector = rVector
+                    convertedVector = rotHandler.convertRotationVectorToTarget(
+                        C, realRVector)
+                    setattr(objSuzanneWithConvertedRotation,
+                            newAttrName, convertedVector)
+                    if testHelpers.areObjsTheSame(context=C, obj1=objSuzanneComparison, obj2=objSuzanneWithConvertedRotation, mute=False) == False:
+                        return False
+                    D.objects.remove(objSuzanneWithConvertedRotation)
+
+                    if specialAxisAngle == False:
+                        setattr(objSuzanneComparison, attrName, rVector)
+                    else:
+                        setattr(objSuzanneComparison, attrName, (9, 5, 7, 1))
+
         return True
 
     def test_everythingKeyFrames():
@@ -1156,10 +1236,10 @@ if __name__ == "__main__":
                 print("Test negative in "+fun.__name__+" !")
                 x = False
         except Exception as exception:
-            print("\n\n")
-            print("Exception occured in "+fun.__name__+" !")
-            print("message:\n"+str(exception))
-            x = False
+                print("\n\n")
+                print("Exception occured in "+fun.__name__+" !")
+                print("message:\n"+str(exception))
+                x = False
 
     if x == True:
         print("\nEvery test succeeded! (That's good)")
