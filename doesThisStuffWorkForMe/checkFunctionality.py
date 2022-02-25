@@ -5,7 +5,6 @@
 # I apologize for the stroke you will have when trying to understand some of the logic I did here due to lacking documentation at points.
 
 
-
 if __name__ == "__main__":
 
     import bpy
@@ -17,6 +16,7 @@ if __name__ == "__main__":
     import pathlib
     import sys
     import importlib
+    import traceback
 
     def importStuff():
         # add the directory where the Blender file is located to sys.path so we can import the scripts that are in there
@@ -1221,10 +1221,141 @@ if __name__ == "__main__":
             context=C, modifier=thirdMod)
         if lastPosNegative != lastPosPositive or lastPosNegative != len(obj.modifiers)-1:
             return False
+
+        # testing the tryToBind() function
+
+        def objectInCurrentScene(obj):
+            bpy.context.window.scene = obj.users_scene[0]
+
+        def objectInOtherScene(obj):
+            newScene = bpy.data.scenes.new("59123519")
+            bpy.context.window.scene = newScene
+            if C.scene in list(obj.users_scene):
+                raise Exception("Scene context setting failed, aborting test")
+
+        def objectInNoScene(obj):
+            for coll in tuple(obj.users_collection):
+                coll.objects.unlink(obj)
+            if len(obj.users_scene) != 0:
+                raise Exception("Scene context setting failed, aborting test")
+
+        def testSurfaceDeform(obj):
+            smod = obj.modifiers.new(
+                name='surfaceDeformMod', type='SURFACE_DEFORM')
+            emptyObj = testHelpers.createSubdivObj(0, "CUBE")
+            emptyObj.data.clear_geometry()
+            fullObj = testHelpers.createSubdivObj(0, "CUBE")
+            testHelpers.messAround(False)
+
+            smod.target = emptyObj
+            if modifiers.tryToBind(context=C, modifier=smod) == True:
+                return False  # target without geometry cannot be bound
+
+            smod.target = fullObj
+            if modifiers.tryToBind(context=C, modifier=smod) == False:
+                return False  # binding should be possible and thus successful
+            if modifiers.tryToBind(context=C, modifier=smod) == True:
+                return False  # unbinding, so no bind should be detected
+
+            smod.target = None
+            if modifiers.tryToBind(context=C, modifier=smod) == True:
+                return False  # no target obj is set and binding shouldn't be possible
+
+            smod.target = fullObj
+            if modifiers.tryToBind(context=C, modifier=smod) == False:
+                return False  # binding should be possible and thus successful
+
+            return True
+
+        def testLaplacianDeform(obj):
+            """
+            Note on the Laplacian Deform modifier:
+            Even without any coding it behaves weird (Blender 3.0)
+            Try these steps to see what I mean as an example:
+
+            - add laplac mod
+            - add two empty vertex groups to object
+            - choose last empty vertex group
+            - try to bind
+            - will fail
+
+            - add laplac mod
+            - add two empty vertex groups
+            - add weight to ONE of them
+            - choose empty vertex group
+            - try to bind
+            - will succeed
+            - even shows difference, unlike if you select the filled one.
+
+            This is why this testfunction makes sure only one single vertex groups exists when the modifier is bound
+
+
+            I once even managed to bind an empty vertex group where the mod showed the "unbind" button while also, 
+            simulateneously, showing an error message that the vertex group is invalid.
+            """
+
+            ldMod = obj.modifiers.new(
+                name='LaplacianDeformMod', type='LAPLACIANDEFORM')
+            testHelpers.messAround(False)
+
+            if modifiers.tryToBind(context=C, modifier=ldMod) == True:
+                return False  # doesnt work with no vertex group selected
+
+            filledVG = obj.vertex_groups.new(name="filled")
+            # adds a weight of 0.5 to vertex with index 0
+            filledVG.add([0], 0.5, "ADD")
+            ldMod.vertex_group = filledVG.name
+            if modifiers.tryToBind(context=C, modifier=ldMod) == False:
+                return False  # should work since vertex group has at least one vertex in it
+            if modifiers.tryToBind(context=C, modifier=ldMod) == True:
+                # unbinding, so False is expected as the return value.
+                return False
+
+            obj.vertex_groups.remove(filledVG)
+            emptyVG = obj.vertex_groups.new(name="empty")
+            ldMod.vertex_group = emptyVG.name
+            # if modifiers.tryToBind(context=C, modifier=ldMod) == True:
+            # I gave up with this: it shouldn't be possible but because, as I said,
+            # the laplacian deform mod can behave very weird, you will be able to bind an empty vertex group here.
+            # Making the test fail everytime, not because our function doesn't work, but because the modifier is bugged.
+            #     print(2)
+            #     return False  # should not work because vertex group is empty
+
+            return True
+
+        def testMeshDeform(obj):
+            mdMod = obj.modifiers.new(name='MeshDeformMod', type='MESH_DEFORM')
+            targetObj = testHelpers.createSubdivObj(0, "PLANE")
+            testHelpers.messAround(False)
+
+            if modifiers.tryToBind(context=C, modifier=mdMod) == True:
+                return False  # no target object selected, binding shouldnt be possible
+            mdMod.object = targetObj
+
+            if modifiers.tryToBind(context=C, modifier=mdMod) == False:
+                return False  # target object selected, binding should be possible
+            if modifiers.tryToBind(context=C, modifier=mdMod) == True:
+                # unbinding, so False should be returned by the function.
+                return False
+
+            return True
+
+        for testSomeMod in (testSurfaceDeform, testLaplacianDeform, testMeshDeform):
+            # testing all operator binds in different scene-context
+            for setSceneContext in (objectInCurrentScene, objectInOtherScene, objectInNoScene):
+                plane = testHelpers.createSubdivObj(0, "PLANE")
+                setSceneContext(plane)
+                testHelpers.messAround(False)
+                if testSomeMod(plane) == False:
+                    print(testSomeMod.__name__)
+                    print(setSceneContext.__name__)
+                    return False
+                D.objects.remove(plane)
+
         return True
 
     x = True
-    # fun as in function, not the joy I haven't experienced since attending highschool
+    # fun as in function, not the joy I haven't experienced since my first day at highschool
     for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh,
                 test_delete_VertsFacesEdges, test_coordinateStuff, test_everythingKeyFrames, test_vertexGroups, test_shapekeys,
                 test_modifiers):
@@ -1236,10 +1367,14 @@ if __name__ == "__main__":
                 print("Test negative in "+fun.__name__+" !")
                 x = False
         except Exception as exception:
-                print("\n\n")
-                print("Exception occured in "+fun.__name__+" !")
-                print("message:\n"+str(exception))
-                x = False
+            print("\n\n")
+            print("Exception occured in "+fun.__name__+" !")
+            print(traceback.format_exc())
+            # print("message:\n"+str(exception))
+            x = False
+        if x == False:
+            1/0
+            pass
 
     if x == True:
         print("\nEvery test succeeded! (That's good)")
