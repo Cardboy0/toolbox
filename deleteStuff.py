@@ -8,19 +8,66 @@ import bmesh
 # https://blender.stackexchange.com/questions/27234/python-how-to-completely-remove-an-object
 
 
-def deleteObjectAndMesh(context,obj):
-    """Deletes the specified object AND its mesh.
+def deleteObjectTogetherWithData(context, obj):
+    """Deletes the specified object AND its data (depending on the type this can be the a mesh, armature, light, etc.)
 
-    Vital for scripts where you create large amounts of objects and delete them again, as the "default" deleting does not remove meshes, meaning they would pile up your file.
+    Vital for scripts where you create large amounts of objects and delete them again, as the "default" deleting does not remove the obj.data, meaning they would pile up in your file.
+
 
     Parameters
     ----------
     obj : bpy.types.Object
         Object to delete
     """
-    mesh = obj.data
+
+    acceptedTypesDict = "acceptedTypes"
+    # creating this dictionary everytime this function is called would waste time, so instead we declare it as a function property once and then access it later again everytime
+    # I tried to declare the property outside of the function, but when I then used the function in an add-on I got some _RestrictData access () exception
+    # so we do it inside
+    if (getattr(deleteObjectTogetherWithData, acceptedTypesDict, False) == False):
+        # all classes below (except the None class) are subclasses of the Blender bpy.types.ID class:
+        # https://docs.blender.org/api/current/bpy.types.ID.html
+        # the values are the method to use to remove an obj.data of that type
+        deleteObjectTogetherWithData.acceptedTypes = {
+            bpy.types.Mesh: (bpy.data.meshes.remove),
+            bpy.types.Armature: (bpy.data.armatures.remove),
+            bpy.types.Camera: (bpy.data.cameras.remove),
+            bpy.types.Curve: (bpy.data.curves.remove),
+            bpy.types.GreasePencil: (bpy.data.grease_pencils.remove),
+            bpy.types.Image: (bpy.data.images.remove),
+            bpy.types.Lattice: (bpy.data.lattices.remove),
+            bpy.types.Light: (bpy.data.lights.remove),
+            bpy.types.LightProbe: (bpy.data.lightprobes.remove),
+            bpy.types.MetaBall: (bpy.data.metaballs.remove),
+            bpy.types.Speaker: (bpy.data.speakers.remove),
+            # nothing to do with your computer volumes, I checked ;)
+            bpy.types.Volume: (bpy.data.volumes.remove),
+
+            # does Nothing, which is exactly what we want. "placeholder" exists as an argument so we can call this function with a objData, even if it is None
+            # empties and some other objects have None as obj.data
+            type(None): lambda placeholder: None
+        }
+
+    objData = obj.data
+    dataType = type(objData)
+
+    # getting the correct method to remove the obj.data from where it is stored in bpy.data
+    removeMethod = deleteObjectTogetherWithData.acceptedTypes.get(
+        dataType, False)
+    if removeMethod == False:
+        # means main type is not in dictionary, which is the case for subclasses (such as bpy.types.TextCurve, which is a subclass of bpy.types.Curve)
+        # so we check out the parent classes next
+        for parentClass in dataType.__bases__:
+            removeMethod = deleteObjectTogetherWithData.acceptedTypes.get(
+                parentClass, False)
+            if removeMethod != False:
+                break
+        if removeMethod == False:
+            raise Exception(
+                "Class of object's data is not recognised: " + str(type(objData)))
+
     bpy.data.objects.remove(obj)
-    bpy.data.meshes.remove(mesh)
+    removeMethod(objData)
 
 
 # Small note: You can get a list of all indices of e.g. the mesh vertices by writing myIndexList = list( range( len( mesh.vertices)))
@@ -96,7 +143,7 @@ def delete_VertsFacesEdges(context, mesh, indexList, type="VERTEX", deleteChilde
     else:
         raise Exception(
             "Invalid value for type parameter - only 'VERTEX', 'EDGE' and 'FACE' are recognised")
-            
+
     # bmeshes always want to do this after you create them and after you did changes to some indices, e.g. by removing a vertex:
     elements.ensure_lookup_table()
     maxIndex = len(elements)-1  # user might have given us invalid indices

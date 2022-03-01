@@ -99,22 +99,113 @@ if __name__ == "__main__":
             print("COULDN'T IMPORT deleteStuff")
             return False
         testHelpers.messAround(switchScenes=True)
-        bpy.ops.mesh.primitive_ico_sphere_add()
-        C.object.name = "kl152592"  # random number to identify
-        C.object.data.name = "kl152592"
-        obj = D.objects["kl152592"]
-        mesh = D.meshes["kl152592"]
-        objs = len(D.objects)
-        meshes = len(D.meshes)
-        deleteStuff.deleteObjectAndMesh(C, C.object)
-        if objs-1 == len(D.objects) and meshes-1 == len(D.meshes) and D.objects.find("kl152592") == -1 and D.meshes.find("kl152592") == -1:
-            return True
-        else:
-            print(objs-1 == len(D.objects))
-            print(meshes-1 == len(D.meshes))
-            print(D.objects.find("kl152592") == -1)
-            print(D.meshes.find("kl152592") == -1)
+
+        def createImage():
+            # Image creation requires us to first create a new image and then assign that to an empty object
+            # We can't use bpy.ops.object.load_reference_image(), because that requires us to choose an image file from our drive
+            simpleImage = D.images.new(
+                name="testImage292318", width=10, height=10)
+            # right now has no data (None)
+            bpy.ops.object.empty_add(type='IMAGE')
+            imageObj = C.object
+            imageObj.data = simpleImage
+
+        o = bpy.ops
+        # the dictionary below contains different examples for objects with specific object.data types
+        # the first value is for later to know where the new object.data will be listed in bpy.data, such as bpy.data.meshes
+        # the second value is a list of operators that create such objects
+        #
+        # Some operators are inside "lambda" functions, which is required because those operators need arguments to work
+        # https://www.w3schools.com/python/python_lambda.asp for more
+        typeDict = {
+            "Mesh": (D.meshes,
+                     [o.mesh.primitive_cone_add]),
+            "Armature": (D.armatures,
+                         [o.object.armature_add]),
+            "Camera": (D.cameras,
+                       [o.object.camera_add]),
+            "Curve": (D.curves,
+                      [
+                          # different subtypes of curve
+                          o.curve.primitive_bezier_curve_add,
+                          o.surface.primitive_nurbs_surface_torus_add,
+                          o.object.text_add,
+                      ]),
+            "GreasePencil": (D.grease_pencils,
+                             [o.object.gpencil_add]),
+            "Image": (D.images,
+                      [createImage]),
+            "Lattice": (D.lattices,
+                        [lambda: o.object.add(type='LATTICE')]),
+            "Light": (D.lights,
+                      [
+                          # these have different subtypes of light
+                          lambda: o.object.light_add(type='POINT'),
+                          lambda: o.object.light_add(type='SUN'),
+                          lambda: o.object.light_add(type='SPOT'),
+                          lambda: o.object.light_add(type='AREA'),
+                      ]),
+            "LightProbe": (D.lightprobes,
+                           [o.object.lightprobe_add]),
+            "MetaBall": (D.metaballs,
+                         [o.object.metaball_add]),
+            "Speaker": (D.speakers,
+                        [o.object.speaker_add]),
+            "Volume": (D.volumes,
+                       [o.object.volume_add]),
+
+            # we do not test Collection Instances
+        }
+
+        # Empties need to be tested slightly different because unlike with all the others types, 
+        # the object.data isn't saved anywhere, because it's simply None
+        Empties = [
+            #these count as empties because their object.data is None
+            o.object.empty_add, 
+            lambda: o.object.effector_add(type='WIND')
+        ]
+
+
+        origObjs = set(D.objects)
+
+        #testing the big type dict
+        for someType, propertyTuple in typeDict.items():
+            collectionToCheck = propertyTuple[0]
+            operatorsToRun = propertyTuple[1]
+            if len(operatorsToRun) == 0:
+                raise Exception("operator list is empty, aborting test...")
+            for op in operatorsToRun:
+                oldObj = C.object
+                op()
+                newObj = C.object
+                if oldObj == newObj:
+                    raise Exception("object creation failed, aborting test...\n"+op.__name__)
+                newData = newObj.data
+                name = newData.name
+                if collectionToCheck.find(name) == -1:  #the .find method returns -1 if no match was found
+                    raise Exception(
+                        "object creation failed, aborting test...\n"+op.__name__)
+                testHelpers.messAround(switchScenes=True)
+                deleteStuff.deleteObjectTogetherWithData(context=C, obj=newObj)
+                # means data object still exists
+                if collectionToCheck.find(name) != -1:
+                    return False
+
+        #doing the seperate test for empties
+        for op in Empties:
+            oldObj = C.object
+            op()
+            newObj = C.object
+            if oldObj == newObj or newObj.data != None:
+                raise Exception("object creation failed, aborting test...\n"+op.__name__)
+            deleteStuff.deleteObjectTogetherWithData(context=C, obj=newObj)
+            # there is no result to check here, the only thing that can go wrong is that the object itself isn't deleted or an exception happens
+
+        currentObjs = set(D.objects)
+        if currentObjs != origObjs:
             return False
+
+        return True
 
     # Collections.py
 
@@ -1373,7 +1464,7 @@ if __name__ == "__main__":
             # print("message:\n"+str(exception))
             x = False
         if x == False:
-            1/0
+            # 1/0
             pass
 
     if x == True:

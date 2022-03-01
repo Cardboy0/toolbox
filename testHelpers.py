@@ -1,6 +1,17 @@
 import bpy
 import time
 import importlib
+try:
+    # a relative import might be better than what you call the import below in the except clause.
+    # especially in add-ons
+    from . import (coordinatesStuff, createRealMesh)
+except:
+    import coordinatesStuff
+    import createRealMesh
+    # print("relative import failed")
+
+for modu in (createRealMesh, coordinatesStuff):
+    importlib.reload(modu)
 
 
 #########################################################################################
@@ -158,63 +169,53 @@ class Timing:
         return t
 
 
-try:
-    # This function relies on two other of our modules because if I had to code that sh*t manually again I would have went into a fit of rage.
-    import createRealMesh
-    import coordinatesStuff
-    importlib.reload(createRealMesh)
-    importlib.reload(coordinatesStuff)
+def areObjsTheSame(context, obj1, obj2, frame="CURRENT", apply_transforms_obj1=True, apply_transforms_obj2=True, mute=True):
+    """Checks if two objects, after everything (such as modifiers) has been applied, are the same (at a single frame) by comparing each vertex coordinate.
 
-    def areObjsTheSame(context, obj1, obj2, frame="CURRENT", apply_transforms_obj1=True, apply_transforms_obj2=True, mute=True):
-        """Checks if two objects, after everything (such as modifiers) has been applied, are the same (at a single frame) by comparing each vertex coordinate.
+    Parameters
+    ----------
+    context : bpy.types.Context
+        probably bpy.context
+    obj1 : bpy.types.Object
+        First object
+    obj2 : bpy.types.Object
+        The object that's supposed to be compared agains the first object
+    frame : str or int
+        The frame for which you want to compare the two objects, by default "CURRENT"
+    apply_transforms_obj1 : bool
+        Whether you want to apply any transformations or keep them for comparing, by default True
+    apply_transforms_obj2 : bool
+        Whether you want to apply any transformations or keep them for comparing, by default True
+    mute : bool
+        Dont print an errormessage with some detail when objs are not the same?
+    """
 
-        Parameters
-        ----------
-        context : bpy.types.Context
-            probably bpy.context
-        obj1 : bpy.types.Object
-            First object
-        obj2 : bpy.types.Object
-            The object that's supposed to be compared agains the first object
-        frame : str or int
-            The frame for which you want to compare the two objects, by default "CURRENT"
-        apply_transforms_obj1 : bool
-            Whether you want to apply any transformations or keep them for comparing, by default True
-        apply_transforms_obj2 : bool
-            Whether you want to apply any transformations or keep them for comparing, by default True
-        mute : bool
-            Dont print an errormessage with some detail when objs are not the same?
-        """
+    def errorMessage(messageStart="Comparison failed for", messageEnd=""):
+        if mute == False:
+            print(messageStart+" objects "+obj1.name +
+                  " and "+obj2.name + " " + messageEnd)
 
-        def errorMessage(messageStart="Comparison failed for", messageEnd=""):
-            if mute==False:
-                print (messageStart+" objects "+obj1.name + " and "+obj2.name + " " + messageEnd)
+    obj1MeshCopy = createRealMesh.createRealMeshCopy(
+        context=context, obj=obj1, frame=frame, apply_transforms=apply_transforms_obj1)
+    obj2MeshCopy = createRealMesh.createRealMeshCopy(
+        context=context, obj=obj2, frame=frame, apply_transforms=apply_transforms_obj2)
+    vertsObj1 = coordinatesStuff.getVertexCoordinates(
+        context=context, mesh=obj1MeshCopy)
+    vertsObj2 = coordinatesStuff.getVertexCoordinates(
+        context=context, mesh=obj2MeshCopy)
 
-        obj1MeshCopy = createRealMesh.createRealMeshCopy(
-            context=context, obj=obj1, frame=frame, apply_transforms=apply_transforms_obj1)
-        obj2MeshCopy = createRealMesh.createRealMeshCopy(
-            context=context, obj=obj2, frame=frame, apply_transforms=apply_transforms_obj2)
-        vertsObj1 = coordinatesStuff.getVertexCoordinates(
-            context=context, mesh=obj1MeshCopy)
-        vertsObj2 = coordinatesStuff.getVertexCoordinates(
-            context=context, mesh=obj2MeshCopy)
-        
-        #don't need them anymore for what's left
-        bpy.data.meshes.remove(obj1MeshCopy)
-        bpy.data.meshes.remove(obj2MeshCopy)
+    # don't need them anymore for what's left
+    bpy.data.meshes.remove(obj1MeshCopy)
+    bpy.data.meshes.remove(obj2MeshCopy)
 
-        if len(vertsObj1) != len(vertsObj2):
-            errorMessage(messageEnd="(Different amount of vertices)")
+    if len(vertsObj1) != len(vertsObj2):
+        errorMessage(messageEnd="(Different amount of vertices)")
+        return False
+    for vertIndex in range(len(vertsObj1)):
+        v1 = vertsObj1[vertIndex]
+        v2 = vertsObj2[vertIndex]
+        if coordinatesStuff.isVectorClose(context=context, vector1=v1, vector2=v2, ndigits=3) == False:
+            errorMessage(messageEnd="(Different vertices found:\nIndex=" +
+                         str(vertIndex)+"\nvert1 = "+str(v1)+"\nvert2 = "+str(v2))
             return False
-        for vertIndex in range(len(vertsObj1)):
-            v1 = vertsObj1[vertIndex]
-            v2 = vertsObj2[vertIndex]
-            if coordinatesStuff.isVectorClose(context=context, vector1=v1, vector2=v2, ndigits=3) == False:
-                errorMessage(messageEnd="(Different vertices found:\nIndex=" +
-                      str(vertIndex)+"\nvert1 = "+str(v1)+"\nvert2 = "+str(v2))
-                return False
-        return True
-
-except:
-    print("Couldn't create function 'areObjsTheSame()' because of failed import.\nIgnore this if you don't intend to use it.")
-    pass
+    return True
