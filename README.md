@@ -38,3 +38,5 @@ https://github.com/Cardboy0/toolbox
 - if you think you can improve a function or class, you can also do the test stuff above to check if your edited code works as intended.
 
 
+# more nerdy stuff
+Checkout [the other README](moreDetails.md) that explains specific stuff about this project in detail if you're confused about some things

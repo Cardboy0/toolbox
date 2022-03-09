@@ -4,9 +4,7 @@
 
 # I apologize for the stroke you will have when trying to understand some of the logic I did here due to lacking documentation at points.
 
-
-if __name__ == "__main__":
-
+def run(context=None):
     import bpy
     import math
     import mathutils
@@ -18,23 +16,43 @@ if __name__ == "__main__":
     import importlib
     import traceback
 
+    if context == None:
+        C = bpy.context
+    else:
+        C = context
+    D = bpy.data
+
     def importStuff():
-        # add the directory where the Blender file is located to sys.path so we can import the scripts that are in there
-        scriptDirectory = pathlib.Path(bpy.data.filepath).parent.resolve()
-        scriptParentDirectory = pathlib.Path(
-            bpy.data.filepath).parent.parent.resolve()
-        for pathStr in [str(scriptDirectory), str(scriptParentDirectory)]:
-            if not pathStr in sys.path:
-                sys.path.append(pathStr)
+        # enable relative imports for when this file is opened directly:
+        if __name__ == '__main__':  # makes sure this only happens when you run the script from inside Blender
+
+            # INCREASE THIS VALUE IF YOU WANT TO ACCESS MODULES IN PARENT FOLDERS (for using something like "from ... import someModule")
+            number_of_parents = 2  # default = 1
+
+            original_path = pathlib.Path(bpy.data.filepath)
+            parent_path = original_path.parent
+
+            for i in range(number_of_parents):
+                parent_path = parent_path.parent
+
+            # remember, paths only work if they're strings
+            str_parent_path = str(parent_path.resolve())
+            # print(str_parent_path)
+            if not str_parent_path in sys.path:
+                sys.path.append(str_parent_path)
+
+            # building the correct __package__ name
+            relative_path = original_path.parent.relative_to(parent_path)
+            with_dots = '.'.join(relative_path.parts)
+            # print(with_dots)
+            global __package__
+            __package__ = with_dots
 
         global testHelpers
-        import testHelpers
+        from .. import testHelpers
         importlib.reload(testHelpers)
 
     importStuff()
-
-    C = bpy.context
-    D = bpy.data
 
     """# https://blender.stackexchange.com/questions/51044/how-to-import-a-blender-python-script-in-another
     # importing other python scripts from inside your main script in Blender can be a hassle, so we use the - in my opinion - easiest method:
@@ -49,7 +67,7 @@ if __name__ == "__main__":
 
     def test_selectObjects():
         try:
-            import selectObjects
+            from .. import selectObjects
             importlib.reload(selectObjects)
             # import selectObjects
             # selectObjects = bpy.data.texts["selectObjects.py"].as_module()
@@ -92,7 +110,7 @@ if __name__ == "__main__":
 
     def test_deleteObjectAndMesh():
         try:
-            import deleteStuff
+            from .. import deleteStuff
             importlib.reload(deleteStuff)
             # deleteStuff = bpy.data.texts["deleteStuff.py"].as_module()
         except:
@@ -157,18 +175,17 @@ if __name__ == "__main__":
             # we do not test Collection Instances
         }
 
-        # Empties need to be tested slightly different because unlike with all the others types, 
+        # Empties need to be tested slightly different because unlike with all the others types,
         # the object.data isn't saved anywhere, because it's simply None
         Empties = [
-            #these count as empties because their object.data is None
-            o.object.empty_add, 
+            # these count as empties because their object.data is None
+            o.object.empty_add,
             lambda: o.object.effector_add(type='WIND')
         ]
 
-
         origObjs = set(D.objects)
 
-        #testing the big type dict
+        # testing the big type dict
         for someType, propertyTuple in typeDict.items():
             collectionToCheck = propertyTuple[0]
             operatorsToRun = propertyTuple[1]
@@ -179,10 +196,12 @@ if __name__ == "__main__":
                 op()
                 newObj = C.object
                 if oldObj == newObj:
-                    raise Exception("object creation failed, aborting test...\n"+op.__name__)
+                    raise Exception(
+                        "object creation failed, aborting test...\n"+op.__name__)
                 newData = newObj.data
                 name = newData.name
-                if collectionToCheck.find(name) == -1:  #the .find method returns -1 if no match was found
+                # the .find method returns -1 if no match was found
+                if collectionToCheck.find(name) == -1:
                     raise Exception(
                         "object creation failed, aborting test...\n"+op.__name__)
                 testHelpers.messAround(switchScenes=True)
@@ -191,13 +210,14 @@ if __name__ == "__main__":
                 if collectionToCheck.find(name) != -1:
                     return False
 
-        #doing the seperate test for empties
+        # doing the seperate test for empties
         for op in Empties:
             oldObj = C.object
             op()
             newObj = C.object
             if oldObj == newObj or newObj.data != None:
-                raise Exception("object creation failed, aborting test...\n"+op.__name__)
+                raise Exception(
+                    "object creation failed, aborting test...\n"+op.__name__)
             deleteStuff.deleteObjectTogetherWithData(context=C, obj=newObj)
             # there is no result to check here, the only thing that can go wrong is that the object itself isn't deleted or an exception happens
 
@@ -244,7 +264,7 @@ if __name__ == "__main__":
         #
 
         try:
-            import Collections
+            from .. import Collections
             importlib.reload(Collections)
             # Collections = bpy.data.texts["Collections.py"].as_module()
         except:
@@ -358,7 +378,7 @@ if __name__ == "__main__":
 
     def test_tagVertices():
         try:
-            import tagVertices
+            from .. import tagVertices
             importlib.reload(tagVertices)
             # tagVertices = bpy.data.texts["tagVertices.py"].as_module(
             # )
@@ -447,7 +467,7 @@ if __name__ == "__main__":
 
     def test_createRealMesh():
         try:
-            import createRealMesh
+            from .. import createRealMesh
             importlib.reload(createRealMesh)
             #createRealMesh = bpy.data.texts["createRealMesh.py"].as_module()
         except:
@@ -544,7 +564,7 @@ if __name__ == "__main__":
             newObj = createRealMesh.createNewObjforMesh(
                 context=C, name="newObj", mesh=newMesh)
             selectObjs([obj])
-            bpy.context.object.active_shape_key_index = 0  # index of BasisSK
+            C.object.active_shape_key_index = 0  # index of BasisSK
             bpy.ops.object.shape_key_remove(all=False)
             bpy.ops.object.shape_key_remove(all=False)
             # both shapekeys removed, but no obj shape = shape of sk2
@@ -677,7 +697,7 @@ if __name__ == "__main__":
 
     def test_delete_VertsFacesEdges():
         try:
-            import deleteStuff
+            from .. import deleteStuff
             importlib.reload(deleteStuff)
             #deleteStuff = bpy.data.texts["deleteStuff.py"].as_module()
         except:
@@ -804,7 +824,7 @@ if __name__ == "__main__":
 
     def test_coordinateStuff():
         try:
-            import coordinatesStuff
+            from .. import coordinatesStuff
             importlib.reload(coordinatesStuff)
             # coordinatesStuff = bpy.data.texts["coordinatesStuff.py"].as_module(
             # )
@@ -837,7 +857,7 @@ if __name__ == "__main__":
             # I ain't gonna code another function with bpy.ops that does this stuff
             # because I tried
             # and ran into weird and annoying bugs
-            import createRealMesh
+            from .. import createRealMesh
             importlib.reload(createRealMesh)
         except:
             print("Couldn't import a required module (createRealMesh)")
@@ -914,7 +934,7 @@ if __name__ == "__main__":
 
     def test_everythingKeyFrames():
         try:
-            import everythingKeyFrames
+            from .. import everythingKeyFrames
             importlib.reload(everythingKeyFrames)
             # everythingKeyFrames = bpy.data.texts["everythingKeyFrames.py"].as_module(
             # )
@@ -951,7 +971,7 @@ if __name__ == "__main__":
 
     def test_vertexGroups():
         try:
-            import vertexGroups
+            from .. import vertexGroups
             importlib.reload(vertexGroups)
             # vertexGroups = bpy.data.texts["vertexGroups.py"].as_module()
         except:
@@ -1124,7 +1144,7 @@ if __name__ == "__main__":
 
     def test_shapekeys():
         try:
-            import shapekeys
+            from .. import shapekeys
             importlib.reload(shapekeys)
             # shapekeys = bpy.data.texts["shapekeys.py"].as_module()
         except:
@@ -1258,7 +1278,7 @@ if __name__ == "__main__":
 
     def test_modifiers():
         try:
-            import modifiers
+            from .. import modifiers
             importlib.reload(modifiers)
             # modifiers = bpy.data.texts["modifiers.py"].as_module()
         except:
@@ -1316,11 +1336,11 @@ if __name__ == "__main__":
         # testing the tryToBind() function
 
         def objectInCurrentScene(obj):
-            bpy.context.window.scene = obj.users_scene[0]
+            C.window.scene = obj.users_scene[0]
 
         def objectInOtherScene(obj):
             newScene = bpy.data.scenes.new("59123519")
-            bpy.context.window.scene = newScene
+            C.window.scene = newScene
             if C.scene in list(obj.users_scene):
                 raise Exception("Scene context setting failed, aborting test")
 
@@ -1469,5 +1489,11 @@ if __name__ == "__main__":
 
     if x == True:
         print("\nEvery test succeeded! (That's good)")
+        return True
     else:
         print("\nAt least one test failed. (That's not good)")
+        return False
+
+
+if __name__ == "__main__":
+    run()

@@ -19,7 +19,7 @@ def deleteObjectTogetherWithData(context, obj):
     obj : bpy.types.Object
         Object to delete
     """
-
+    #TODO: Check out what unlinking is, and if it isn't a better alternative.
     acceptedTypesDict = "acceptedTypes"
     # creating this dictionary everytime this function is called would waste time, so instead we declare it as a function property once and then access it later again everytime
     # I tried to declare the property outside of the function, but when I then used the function in an add-on I got some _RestrictData access () exception

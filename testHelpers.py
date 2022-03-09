@@ -1,15 +1,34 @@
 import bpy
 import time
 import importlib
-try:
-    # a relative import might be better than what you call the import below in the except clause.
-    # especially in add-ons
-    from . import (coordinatesStuff, createRealMesh)
-except:
-    import coordinatesStuff
-    import createRealMesh
-    # print("relative import failed")
+import sys
+import pathlib
 
+#enable relative imports in case someone wants to open this file directly:
+if __name__ == '__main__': #makes sure this only happens when you run the script from inside Blender
+    
+    # INCREASE THIS VALUE IF YOU WANT TO ACCESS MODULES IN PARENT FOLDERS (for using something like "from ... import someModule") 
+    number_of_parents = 1 # default = 1
+    
+    original_path = pathlib.Path(bpy.data.filepath)
+    parent_path = original_path.parent
+    
+    for i in range(number_of_parents):
+        parent_path = parent_path.parent
+    
+    
+    str_parent_path = str(parent_path.resolve()) # remember, paths only work if they're strings
+    #print(str_parent_path)    
+    if not str_parent_path in sys.path:
+        sys.path.append(str_parent_path)
+
+    # building the correct __package__ name
+    relative_path = original_path.parent.relative_to(parent_path)
+    with_dots = '.'.join(relative_path.parts)
+    #print(with_dots)
+    __package__ = with_dots
+
+from . import (coordinatesStuff, createRealMesh)
 for modu in (createRealMesh, coordinatesStuff):
     importlib.reload(modu)
 

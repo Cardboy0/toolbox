@@ -5,12 +5,16 @@ However you might be unsure if they still work, or even just if they work on you
 In that case you can use the .py script in this specific subfolder to do a quick check - it does a bunch of tests with (almost) all other script contents in this repository to check if they still work.
 
 ## How do I test?
+There are two ways:  
+#1: Running the test script directly:
 1. Create a new empty Blender Project **inside this subfolder**
 2. Open the **checkFunctionality.py** script in that project.
 3. Run it
 4. Check the console for any print statements or raised exceptions.
-
-
+  
+#2: Running as part of an add-on
+1. Simply import the module and run the `run()` function (in an Operator or something similar)
+2. The run() function returns True when everything succeeded or False if not.
 
 ## What repository???
 If, for some reason, this readme file exists as a lone file on your computer, or the parent folder disappeared:
