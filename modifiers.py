@@ -2,7 +2,7 @@ import bpy
 import warnings
 
 
-def getModifierPositionInStack(context, modifier):
+def get_modifier_position_in_stack(context, modifier):
     """The index of a modifier in the stack of the object it belongs to. That's the thing you see in the "modifier properties" tab.
 
     Parameters
@@ -25,7 +25,7 @@ def getModifierPositionInStack(context, modifier):
         pos += 1
 
 
-def moveModiferToPositionInStack(context, modifier, position):
+def move_modifer_to_position_in_stack(context, modifier, position):
     """Moves a modifier to a certain position in the object modifier stack it belongs to. That's the thing you see in the "modifier properties" tab.
 
     Parameters
@@ -46,7 +46,7 @@ def moveModiferToPositionInStack(context, modifier, position):
         override, modifier=modifier.name, index=position)
 
 
-def tryToBind(context, modifier):
+def try_to_bind(context, modifier):
     """A few modifiers require you to press a *bind* button. Doing that from within Python is harder than you think
     because there are like a dozen of things that can go wrong, which is why I created this function to do it instead.
 
@@ -88,20 +88,20 @@ def tryToBind(context, modifier):
     I once even managed to have an error message that the binding failed while the modifier showed the "unbind" button as a success at the same time. 
     """
 
-    validTypes = {'MESH_DEFORM', 'SURFACE_DEFORM', 'LAPLACIANDEFORM'}
+    valid_types = {'MESH_DEFORM', 'SURFACE_DEFORM', 'LAPLACIANDEFORM'}
     # I didn't forget the underscore in LAPLACIANDEFORM, there simply is none
-    modType = modifier.type
-    if (modType in validTypes) == False:
+    mod_type = modifier.type
+    if (mod_type in valid_types) == False:
         raise Exception(
-            "This method can only bind modifiers of the following types:\n"+str(validTypes))
+            "This method can only bind modifiers of the following types:\n" + str(valid_types))
 
     obj = modifier.id_data  # the object the modifier belongs to
 
-    tempScene = None
+    temp_scene = None
     if (len(obj.users_scene) == 0):
         # binding an object that is in no scene doesn't work, so we temporarily add it to a new scene.
-        tempScene = bpy.data.scenes.new("temporary scene for binding")
-        tempScene.collection.objects.link(obj)
+        temp_scene = bpy.data.scenes.new("temporary scene for binding")
+        temp_scene.collection.objects.link(obj)
 
     override = {'object': obj,
                 'active_object': obj,
@@ -113,13 +113,13 @@ def tryToBind(context, modifier):
     # Apart from these three items in the override no context properties seem to be of any importance, including the viewlayer(s)
     # Read this for more information on overriding: https://docs.blender.org/api/current/bpy.ops.html#overriding-context
 
-    if modType == 'SURFACE_DEFORM':
+    if mod_type == 'SURFACE_DEFORM':
         op = bpy.ops.object.surfacedeform_bind
         bound = "is_bound"
-    elif modType == 'MESH_DEFORM':
+    elif mod_type == 'MESH_DEFORM':
         op = bpy.ops.object.meshdeform_bind
         bound = "is_bound"
-    elif modType == 'LAPLACIANDEFORM':
+    elif mod_type == 'LAPLACIANDEFORM':
         op = bpy.ops.object.laplaciandeform_bind
         bound = "is_bind"  # not a spelling mistake
 
@@ -133,8 +133,8 @@ def tryToBind(context, modifier):
     if is_bound == False and was_already_bound == False:
         op(override, modifier=modifier.name)  # resetting the "failed" state
 
-    if tempScene != None:
+    if temp_scene != None:
         # created at the beginning and no longer needed, so we remove it again
-        bpy.data.scenes.remove(tempScene)
+        bpy.data.scenes.remove(temp_scene)
 
     return is_bound

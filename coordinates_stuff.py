@@ -9,7 +9,7 @@ import mathutils
 # because the former has been coded for performance and thus faster that what you might come up with.
 
 
-def isVectorClose(context, vector1, vector2, ndigits=6):
+def is_vector_close(context, vector1, vector2, ndigits=6):
     """Checks if two (coordinate) vectors are approx. the same
 
     Parameters
@@ -28,11 +28,11 @@ def isVectorClose(context, vector1, vector2, ndigits=6):
     bool
         Whether they are close to each other or not
     """
-    length = (vector1-vector2).length
+    length = (vector1 - vector2).length
     return 0 == round(length, ndigits)
 
 
-def getVertexCoordinates(context, mesh, vertIndices="ALL"):
+def get_vertex_coordinates(context, mesh, vert_indices="ALL"):
     """Returns the coordinate vectors of all specified vertices.
 
     Parameters
@@ -41,7 +41,7 @@ def getVertexCoordinates(context, mesh, vertIndices="ALL"):
         Probably bpy.context
     mesh : bpy.types.Mesh
         The mesh in question
-    vertIndices : list or "ALL"
+    vert_indices : list or "ALL"
         Specifiy your vertices by index, by default "ALL"
 
     Returns
@@ -50,13 +50,13 @@ def getVertexCoordinates(context, mesh, vertIndices="ALL"):
         List where listIndex == vertIndex, and the value at that index == coordinateVector\n
         Vertices that weren't specified get a value of None
     """
-    vertCoordinates = [None]*len(mesh.vertices)
-    if vertIndices == "ALL":
-        vertIndices = list(range(len(mesh.vertices)))
-    for vertIndex in vertIndices:
-        vertCoordinates[vertIndex] = mesh.vertices[vertIndex].co.copy()
+    vert_coordinates = [None] * len(mesh.vertices)
+    if vert_indices == "ALL":
+        vert_indices = list(range(len(mesh.vertices)))
+    for vert_index in vert_indices:
+        vert_coordinates[vert_index] = mesh.vertices[vert_index].co.copy()
     # If my old notes are correct, doing it like this (iterating trough all vertices and using co.copy()) is approx. 30% faster than using foreach_get() to get the x,y,z values and then creating new Vectors from each of those triplets.
-    return vertCoordinates
+    return vert_coordinates
 
 
 class RotationHandling():
@@ -104,37 +104,37 @@ class RotationHandling():
     """
 
     # these are the allowed values for a bpy.Objects object.rotation_mode
-    rotTypeQuaternion = 'QUATERNION'
-    rotTypeEulerXYZ = "XYZ"
-    rotTypeEulerXZY = "XZY"
-    rotTypeEulerYXZ = "YXZ"
-    rotTypeEulerYZX = "YZX"
-    rotTypeEulerZXY = "ZXY"
-    rotTypeEulerZYX = "ZYX"
-    rotTypeAxisAngle = 'AXIS_ANGLE'
+    rot_type_quaternion = 'QUATERNION'
+    rot_type_euler_xyz = "XYZ"
+    rot_type_euler_xzy = "XZY"
+    rot_type_euler_yxz = "YXZ"
+    rot_type_euler_yzx = "YZX"
+    rot_type_euler_zxy = "ZXY"
+    rot_type_euler_zyx = "ZYX"
+    rot_type_axis_angle = 'AXIS_ANGLE'
 
-    __allEulers = (
-        rotTypeEulerXYZ,
-        rotTypeEulerXZY,
-        rotTypeEulerYXZ,
-        rotTypeEulerYZX,
-        rotTypeEulerZXY,
-        rotTypeEulerZYX,
+    __all_eulers = (
+        rot_type_euler_xyz,
+        rot_type_euler_xzy,
+        rot_type_euler_yxz,
+        rot_type_euler_yzx,
+        rot_type_euler_zxy,
+        rot_type_euler_zyx,
     )
 
-    source_RotType = None
-    source_isEuler = False
-    source_EulerAsTuple = None
-    source_AxisAngleIsTupleOrList = False
-    source_AxisAngleIsPair = False
+    source_rot_type = None
+    source_is_euler = False
+    source_euler_as_tuple = None
+    source_axis_angle_is_tuple_or_list = False
+    source_axis_angle_is_pair = False
 
-    target_RotType = None
-    target_isEuler = False
+    target_rot_type = None
+    target_is_euler = False
 
-    __listForAxisAngles = [0, 0, 0, 0]
+    __list_for_axis_angles = [0, 0, 0, 0]
 
     @classmethod
-    def getRotationType(clss, context, rotationVector):
+    def get_rotation_type(clss, context, rotation_vector):
         """Gets the rotation type of a vector, meaning one of the values an objects rotation_mode accepts.
         Notice that the actual contents (the number values) of the rotationVector don't matter.
 
@@ -142,7 +142,7 @@ class RotationHandling():
         ----------
         context : bpy.types.Context
             Probably bpy.context
-        rotationVector : The following types can be recognised:
+        rotation_vector : The following types can be recognised:
             - Quaternion:
                 - mathutils.Quaternion
             - Euler:
@@ -164,67 +164,67 @@ class RotationHandling():
             If an unrecognized rotation vector type is given.
         """
 
-        def isNumber(number):
+        def is_number(number):
             try:
                 int(number)
                 return True
             except:
                 return False
 
-        vType = type(rotationVector)
-        if vType == mathutils.Quaternion:
-            return clss.rotTypeQuaternion
-        elif vType == mathutils.Euler:
-            return rotationVector.order
-        elif len(rotationVector) == 4:
+        v_type = type(rotation_vector)
+        if v_type == mathutils.Quaternion:
+            return clss.rot_type_quaternion
+        elif v_type == mathutils.Euler:
+            return rotation_vector.order
+        elif len(rotation_vector) == 4:
             # luckily this covers both the case where it's a tuple/list or a bpy_float array, because the latter also only has a length of 4.
-            return clss.rotTypeAxisAngle
-        elif len(rotationVector) == 2 and type(rotationVector[0]) == mathutils.Vector and isNumber(rotationVector[1]) == True:
-            return clss.rotTypeAxisAngle
+            return clss.rot_type_axis_angle
+        elif len(rotation_vector) == 2 and type(rotation_vector[0]) == mathutils.Vector and is_number(rotation_vector[1]) == True:
+            return clss.rot_type_axis_angle
         else:
             try:
-                stringRepresentation = str(rotationVector)
+                string_representation = str(rotation_vector)
             except:
-                stringRepresentation = "(values cannot be displayed because it's not convertable to string)"
+                string_representation = "(values cannot be displayed because it's not convertable to string)"
             raise Exception(
-                "Couldn't recognise rotation vector of type " + str(vType) + " with values:\n"+stringRepresentation+"\n")
+                "Couldn't recognise rotation vector of type " + str(v_type) + " with values:\n" + string_representation + "\n")
 
-    def setRotationTypeOfSourceVector(self, context, rotationVector):
+    def set_rotation_type_of_source_vector(self, context, rotation_vector):
         """With this you tell this instance what type of rotation vectors you will later feed it.
 
         Parameters
         ----------
         context : bpy.types.Context
             Probably bpy.context
-        rotationVector : see getRotationType() method description
+        rotation_vector : see get_rotation_type() method description
         """
-        self.source_RotType = self.getRotationType(
-            context=context, rotationVector=rotationVector)
-        if self.source_RotType in self.__allEulers:
-            self.source_isEuler = True
-            self.source_EulerAsTuple = tuple(
-                rotationVector.order.lower())  # turns "XYZ" into ['x', 'y', 'z']
-        elif self.source_RotType == self.rotTypeAxisAngle and (type(rotationVector) == tuple or type(rotationVector) == list):
-            if len(rotationVector) == 4:
-                self.source_AxisAngleIsTupleOrList = True
-            elif len(rotationVector) == 2:
-                self.source_AxisAngleIsPair = True
+        self.source_rot_type = self.get_rotation_type(
+            context=context, rotation_vector=rotation_vector)
+        if self.source_rot_type in self.__all_eulers:
+            self.source_is_euler = True
+            self.source_euler_as_tuple = tuple(
+                rotation_vector.order.lower())  # turns "XYZ" into ['x', 'y', 'z']
+        elif self.source_rot_type == self.rot_type_axis_angle and (type(rotation_vector) == tuple or type(rotation_vector) == list):
+            if len(rotation_vector) == 4:
+                self.source_axis_angle_is_tuple_or_list = True
+            elif len(rotation_vector) == 2:
+                self.source_axis_angle_is_pair = True
 
-    def setRotationTypeOfTargetVector(self, context, rotationVector):
+    def set_rotation_type_of_target_vector(self, context, rotation_vector):
         """With this you tell this instance what type of rotation vectors you later expect to gain from it.
 
         Parameters
         ----------
         context : bpy.types.Context
             Probably bpy.context
-        rotationVector : see getRotationType() method description
+        rotation_vector : see get_rotation_type() method description
         """
-        self.target_RotType = self.getRotationType(
-            context=context, rotationVector=rotationVector)
-        if self.target_RotType in self.__allEulers:
-            self.target_isEuler = True
+        self.target_rot_type = self.get_rotation_type(
+            context=context, rotation_vector=rotation_vector)
+        if self.target_rot_type in self.__all_eulers:
+            self.target_is_euler = True
 
-    def convertRotationVectorToTarget(self, context, rotationVector):
+    def convert_rotation_vector_to_target(self, context, rotation_vector):
         """Converts a rotation vector (being the type you set as the source type earlier) into the equivalent of the target type.
 
         Important 
@@ -253,56 +253,58 @@ class RotationHandling():
         # dealing with axis angle type was taken from https://blender.stackexchange.com/questions/212700/how-to-convert-rotation-axis-angle-to-euler-or-quaternion-via-python
 
         # 1-3 Euler to x:
-        if self.source_isEuler == True:
+        if self.source_is_euler == True:
             # 1 Euler to Quaternion
-            if self.target_RotType == self.rotTypeQuaternion:
-                return rotationVector.to_quaternion()
+            if self.target_rot_type == self.rot_type_quaternion:
+                return rotation_vector.to_quaternion()
             # 2 Euler to Euler
-            elif self.target_isEuler == True:
+            elif self.target_is_euler == True:
                 # sadly we cannot just reorder the xyz values, there's actual math involved.
-                return rotationVector.to_quaternion().to_euler(self.target_RotType)
+                return rotation_vector.to_quaternion().to_euler(self.target_rot_type)
             # 3 Euler to Axis Angle
             else:
-                toBadVector = rotationVector.to_quaternion().to_axis_angle()
-                return (toBadVector[1],)+toBadVector[0][:]  # returns (w,x,y,z)
+                to_bad_vector = rotation_vector.to_quaternion().to_axis_angle()
+                # returns (w,x,y,z)
+                return (to_bad_vector[1],) + to_bad_vector[0][:]
 
         # 4-6 Quaternion to x:
-        elif self.source_RotType == self.rotTypeQuaternion:
+        elif self.source_rot_type == self.rot_type_quaternion:
             # 4 Quaternion to Quaternion
-            if self.target_RotType == self.rotTypeQuaternion:
-                return rotationVector.copy()
+            if self.target_rot_type == self.rot_type_quaternion:
+                return rotation_vector.copy()
             # 5 Quaternion to Euler
-            elif self.target_isEuler == True:
-                return rotationVector.to_euler(self.target_RotType)
+            elif self.target_is_euler == True:
+                return rotation_vector.to_euler(self.target_rot_type)
             # 6 Quaternion to Axis Angle
             else:
-                toBadVector = rotationVector.to_axis_angle()
-                return (toBadVector[1],)+toBadVector[0][:]  # returns (w,x,y,z)
+                to_bad_vector = rotation_vector.to_axis_angle()
+                # returns (w,x,y,z)
+                return (to_bad_vector[1],) + to_bad_vector[0][:]
 
         # 7-9 Axis Angle to x:
         else:
             # we first need to fill our __listForAxisAngles list with the correct values
-            if self.source_AxisAngleIsTupleOrList == True:
+            if self.source_axis_angle_is_tuple_or_list == True:
                 # fancy code for "replace all values of first list with all values of second list"
-                self.__listForAxisAngles[:] = rotationVector[:]
-            elif self.source_AxisAngleIsPair == True:
-                self.__listForAxisAngles[:] = (
-                    rotationVector[1],)+rotationVector[0][:]  # translates to (w,x,y,z)
+                self.__list_for_axis_angles[:] = rotation_vector[:]
+            elif self.source_axis_angle_is_pair == True:
+                self.__list_for_axis_angles[:] = (
+                    rotation_vector[1],) + rotation_vector[0][:]  # translates to (w,x,y,z)
             else:
                 # puts w,x,y,z values into the list using the bpy foreach_get method
                 # foreach_get is probably faster than the stuff above, but only works on bpy_arrays and not default tuples or lists
-                rotationVector.foreach_get(self.__listForAxisAngles)
+                rotation_vector.foreach_get(self.__list_for_axis_angles)
 
             # 7 Axis Angle to Quaternion
-            if self.target_RotType == self.rotTypeQuaternion:
+            if self.target_rot_type == self.rot_type_quaternion:
                 matrix = mathutils.Matrix.Rotation(
-                    self.__listForAxisAngles[0], 4, self.__listForAxisAngles[1:])  # angle = w, axis = [x,y,z]
+                    self.__list_for_axis_angles[0], 4, self.__list_for_axis_angles[1:])  # angle = w, axis = [x,y,z]
                 return matrix.to_quaternion()
             # 8 Axis Angle to Euler
-            elif self.target_isEuler == True:
+            elif self.target_is_euler == True:
                 matrix = mathutils.Matrix.Rotation(
-                    self.__listForAxisAngles[0], 4, self.__listForAxisAngles[1:])  # angle = w, axis = [x,y,z]
-                return matrix.to_euler(self.target_RotType)
+                    self.__list_for_axis_angles[0], 4, self.__list_for_axis_angles[1:])  # angle = w, axis = [x,y,z]
+                return matrix.to_euler(self.target_rot_type)
             # 9 Axis Angle to Axis Angle
             else:
-                return tuple(self.__listForAxisAngles)
+                return tuple(self.__list_for_axis_angles)

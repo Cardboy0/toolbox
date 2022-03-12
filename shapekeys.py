@@ -2,8 +2,7 @@ import bpy
 import warnings
 
 
-
-def createShapekey(context, obj, reference):
+def create_shapekey(context, obj, reference):
     """Creates a new shapekey for an object with coordinates from the reference. Different reference types are accepted.
     Make sure that a Basis shapekey already exists when using this function.
 
@@ -27,35 +26,35 @@ def createShapekey(context, obj, reference):
     #     #create basis shapekey
     #     basisShapekey = obj.shape_key_add(name="Basis")
 
-    origActiveIndex = obj.active_shape_key_index
-    origActiveShapekey = obj.active_shape_key
+    orig_active_index = obj.active_shape_key_index
+    orig_active_shapekey = obj.active_shape_key
 
-    newShapekey = obj.shape_key_add(from_mix=False)
+    new_shapekey = obj.shape_key_add(from_mix=False)
 
-    obj.active_shape_key_index = origActiveIndex
-    if obj.active_shape_key != origActiveShapekey:
+    obj.active_shape_key_index = orig_active_index
+    if obj.active_shape_key != orig_active_shapekey:
         warnings.warn(
             "Had a problem resetting the active shape key. Ignoring...")
 
-    refType = type(reference)
+    ref_type = type(reference)
 
-    if refType == bpy.types.Mesh:
-        seqCoordinates = [0, 0, 0] * len(obj.data.vertices)
+    if ref_type == bpy.types.Mesh:
+        seq_coordinates = [0, 0, 0] * len(obj.data.vertices)
         # doing it with foreach_get/set is like 10 times faster than "normal" set/get methods
-        reference.vertices.foreach_get("co", seqCoordinates)
-        reference = seqCoordinates
-        refType = list
+        reference.vertices.foreach_get("co", seq_coordinates)
+        reference = seq_coordinates
+        ref_type = list
 
-    if refType == list:
-        newShapekey.data.foreach_set("co", reference)
-    elif refType == dict:
+    if ref_type == list:
+        new_shapekey.data.foreach_set("co", reference)
+    elif ref_type == dict:
         for vertIndex, coVector in reference.items():
-            newShapekey.data[vertIndex].co = coVector
+            new_shapekey.data[vertIndex].co = coVector
 
-    return newShapekey
+    return new_shapekey
 
 
-def muteAllShapekeys(context, mesh, mute=True, exclude=["BASIS"]):
+def mute_all_shapekeys(context, mesh, mute=True, exclude=["BASIS"]):
     """Mutes or unmutes all shapekeys of a mesh except the ones specified!
     Very fast.
 
@@ -73,18 +72,18 @@ def muteAllShapekeys(context, mesh, mute=True, exclude=["BASIS"]):
     """
     # first we mute (or unmute) all, and then reset the mute status of theshapekeys in "exclude"
     # fyi, getting the index of a shapekey seems to mostly be guesswork, so we shouldn't work with individual indices
-    originalMutes = []
+    original_mutes = []
     for sk in exclude:
         if sk == "BASIS":
-            basisSK = mesh.shape_keys.reference_key
-            originalMutes.append((basisSK, basisSK.mute))
+            basis_sk = mesh.shape_keys.reference_key
+            original_mutes.append((basis_sk, basis_sk.mute))
             continue
-        originalMutes.append((sk, sk.mute))
+        original_mutes.append((sk, sk.mute))
 
     # instead of True's and False's, foreach_set() needs 1's and 0's
     mute = int(mute)
-    seq = [mute]*len(mesh.shape_keys.key_blocks)
+    seq = [mute] * len(mesh.shape_keys.key_blocks)
     mesh.shape_keys.key_blocks.foreach_set("mute", seq)
 
-    for sk, origMute in originalMutes:
-        sk.mute = origMute
+    for sk, orig_mute in original_mutes:
+        sk.mute = orig_mute

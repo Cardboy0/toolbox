@@ -22,7 +22,7 @@ def run(context=None):
         C = context
     D = bpy.data
 
-    def importStuff():
+    def import_stuff():
         # enable relative imports for when this file is opened directly:
         if __name__ == '__main__':  # makes sure this only happens when you run the script from inside Blender
 
@@ -48,11 +48,11 @@ def run(context=None):
             global __package__
             __package__ = with_dots
 
-        global testHelpers
-        from .. import testHelpers
-        importlib.reload(testHelpers)
+        global test_helpers
+        from .. import test_helpers
+        importlib.reload(test_helpers)
 
-    importStuff()
+    import_stuff()
 
     """# https://blender.stackexchange.com/questions/51044/how-to-import-a-blender-python-script-in-another
     # importing other python scripts from inside your main script in Blender can be a hassle, so we use the - in my opinion - easiest method:
@@ -63,34 +63,35 @@ def run(context=None):
     C.scene.frame_set(100)
     bpy.ops.mesh.primitive_cube_add()
     cube = C.object
-    print("\n\n"*3+"*"*200+"\nStart of new test run\n\n")
+    print("\n\n" * 3 + "*" * 200 + "\nStart of new test run\n\n")
 
-    def test_selectObjects():
+    def test_select_objects():
         try:
-            from .. import selectObjects
-            importlib.reload(selectObjects)
+            from .. import select_objects
+            importlib.reload(select_objects)
             # import selectObjects
             # selectObjects = bpy.data.texts["selectObjects.py"].as_module()
         except:
             print("Couldn't import selectObjects!")
             return False
-        cube = testHelpers.createSubdivObj(subdivisions=0, type="CUBE")
+        cube = test_helpers.create_subdiv_obj(subdivisions=0, type="CUBE")
         # selection depends on the scene
-        testHelpers.messAround(switchScenes=False)
+        test_helpers.mess_around(switch_scenes=False)
         bpy.ops.mesh.primitive_plane_add()
-        planeOne = C.object
+        plane_one = C.object
         bpy.ops.mesh.primitive_plane_add()
-        planeTwo = C.object
+        plane_two = C.object
         bpy.ops.mesh.primitive_plane_add()
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.select_all(action='DESELECT')
-        selectObjects.selectObjects(C, [cube], True, None)
+        select_objects.select_objects(C, [cube], True, None)
         if C.object != cube:
             print(1)
             return False
-        selectObjects.selectObjects(C, [planeOne, planeTwo], False, planeTwo)
+        select_objects.select_objects(
+            C, [plane_one, plane_two], False, plane_two)
 
-        if C.object != planeTwo or C.active_object != planeTwo:
+        if C.object != plane_two or C.active_object != plane_two:
             print(C.view_layer.active.name)
             print(C.object.name)
             print(C.active_object.name)
@@ -99,7 +100,7 @@ def run(context=None):
         if len(C.selected_objects) != 3:
             print(3)
             return False
-        for obj in (cube, planeOne, planeTwo):
+        for obj in (cube, plane_one, plane_two):
             if not (obj in C.selected_objects):
                 print(4)
                 return False
@@ -108,25 +109,25 @@ def run(context=None):
 
     # deleteStuff.py
 
-    def test_deleteObjectAndMesh():
+    def test_delete_object_and_mesh():
         try:
-            from .. import deleteStuff
-            importlib.reload(deleteStuff)
+            from .. import delete_stuff
+            importlib.reload(delete_stuff)
             # deleteStuff = bpy.data.texts["deleteStuff.py"].as_module()
         except:
             print("COULDN'T IMPORT deleteStuff")
             return False
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
 
-        def createImage():
+        def create_image():
             # Image creation requires us to first create a new image and then assign that to an empty object
             # We can't use bpy.ops.object.load_reference_image(), because that requires us to choose an image file from our drive
-            simpleImage = D.images.new(
+            simple_image = D.images.new(
                 name="testImage292318", width=10, height=10)
             # right now has no data (None)
             bpy.ops.object.empty_add(type='IMAGE')
-            imageObj = C.object
-            imageObj.data = simpleImage
+            image_obj = C.object
+            image_obj.data = simple_image
 
         o = bpy.ops
         # the dictionary below contains different examples for objects with specific object.data types
@@ -135,7 +136,7 @@ def run(context=None):
         #
         # Some operators are inside "lambda" functions, which is required because those operators need arguments to work
         # https://www.w3schools.com/python/python_lambda.asp for more
-        typeDict = {
+        type_dict = {
             "Mesh": (D.meshes,
                      [o.mesh.primitive_cone_add]),
             "Armature": (D.armatures,
@@ -152,7 +153,7 @@ def run(context=None):
             "GreasePencil": (D.grease_pencils,
                              [o.object.gpencil_add]),
             "Image": (D.images,
-                      [createImage]),
+                      [create_image]),
             "Lattice": (D.lattices,
                         [lambda: o.object.add(type='LATTICE')]),
             "Light": (D.lights,
@@ -177,59 +178,61 @@ def run(context=None):
 
         # Empties need to be tested slightly different because unlike with all the others types,
         # the object.data isn't saved anywhere, because it's simply None
-        Empties = [
+        empties = [
             # these count as empties because their object.data is None
             o.object.empty_add,
             lambda: o.object.effector_add(type='WIND')
         ]
 
-        origObjs = set(D.objects)
+        orig_objs = set(D.objects)
 
         # testing the big type dict
-        for someType, propertyTuple in typeDict.items():
-            collectionToCheck = propertyTuple[0]
-            operatorsToRun = propertyTuple[1]
-            if len(operatorsToRun) == 0:
+        for some_type, property_tuple in type_dict.items():
+            collection_to_check = property_tuple[0]
+            operators_to_run = property_tuple[1]
+            if len(operators_to_run) == 0:
                 raise Exception("operator list is empty, aborting test...")
-            for op in operatorsToRun:
-                oldObj = C.object
+            for op in operators_to_run:
+                old_obj = C.object
                 op()
-                newObj = C.object
-                if oldObj == newObj:
+                new_obj = C.object
+                if old_obj == new_obj:
                     raise Exception(
-                        "object creation failed, aborting test...\n"+op.__name__)
-                newData = newObj.data
-                name = newData.name
+                        "object creation failed, aborting test...\n" + op.__name__)
+                new_data = new_obj.data
+                name = new_data.name
                 # the .find method returns -1 if no match was found
-                if collectionToCheck.find(name) == -1:
+                if collection_to_check.find(name) == -1:
                     raise Exception(
-                        "object creation failed, aborting test...\n"+op.__name__)
-                testHelpers.messAround(switchScenes=True)
-                deleteStuff.deleteObjectTogetherWithData(context=C, obj=newObj)
+                        "object creation failed, aborting test...\n" + op.__name__)
+                test_helpers.mess_around(switch_scenes=True)
+                delete_stuff.delete_object_together_with_data(
+                    context=C, obj=new_obj)
                 # means data object still exists
-                if collectionToCheck.find(name) != -1:
+                if collection_to_check.find(name) != -1:
                     return False
 
         # doing the seperate test for empties
-        for op in Empties:
-            oldObj = C.object
+        for op in empties:
+            old_obj = C.object
             op()
-            newObj = C.object
-            if oldObj == newObj or newObj.data != None:
+            new_obj = C.object
+            if old_obj == new_obj or new_obj.data != None:
                 raise Exception(
-                    "object creation failed, aborting test...\n"+op.__name__)
-            deleteStuff.deleteObjectTogetherWithData(context=C, obj=newObj)
+                    "object creation failed, aborting test...\n" + op.__name__)
+            delete_stuff.delete_object_together_with_data(
+                context=C, obj=new_obj)
             # there is no result to check here, the only thing that can go wrong is that the object itself isn't deleted or an exception happens
 
-        currentObjs = set(D.objects)
-        if currentObjs != origObjs:
+        current_objs = set(D.objects)
+        if current_objs != orig_objs:
             return False
 
         return True
 
     # Collections.py
 
-    def test_createCollection():
+    def test_create_collection():
         # Try to create this:
         # master-collection (of scene)
         # ----coll_apple
@@ -264,20 +267,20 @@ def run(context=None):
         #
 
         try:
-            from .. import Collections
-            importlib.reload(Collections)
+            from .. import collectionz
+            importlib.reload(collectionz)
             # Collections = bpy.data.texts["Collections.py"].as_module()
         except:
             print("COULDN'T IMPORT COLLECTIONS.py")
             return False
-        testHelpers.messAround(switchScenes=True)
-        origScene = C.scene
+        test_helpers.mess_around(switch_scenes=True)
+        orig_scene = C.scene
         # delete pre-existing test-results
-        deleteCollections = ["coll_apple", "coll_banana",
-                             "coll_blueberry", "coll_babaco", "coll_cherry", "coll_dewberry"]
-        for collName in deleteCollections:
+        delete_collections = ["coll_apple", "coll_banana",
+                              "coll_blueberry", "coll_babaco", "coll_cherry", "coll_dewberry"]
+        for coll_name in delete_collections:
             try:
-                D.collections.remove(D.collections[collName])
+                D.collections.remove(D.collections[coll_name])
             except:
                 None
         try:
@@ -288,7 +291,7 @@ def run(context=None):
         # create two new scenes
         bpy.ops.scene.new(type='NEW')
         bpy.ops.scene.new(type='NEW')
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
         # we aren't even IN the original scene when we do this stuff
         # that's how good this test is
         bpy.ops.mesh.primitive_ico_sphere_add()
@@ -298,48 +301,48 @@ def run(context=None):
         obj2 = C.object
         obj2.name = "obj2"
 
-        coll_apple = Collections.createCollection(
-            C, "coll_apple", origScene.collection)
-        coll_banana = Collections.createCollection(
-            C, "coll_banana", origScene.collection)
+        coll_apple = collectionz.create_collection(
+            C, "coll_apple", orig_scene.collection)
+        coll_banana = collectionz.create_collection(
+            C, "coll_banana", orig_scene.collection)
         # should only exist in current (wrong) scene
-        coll_xxxx = Collections.createCollection(C, "coll_xxxx", "MASTER")
-        coll_cherry = Collections.createCollection(C, "coll_cherry", "MASTER")
+        coll_xxxx = collectionz.create_collection(C, "coll_xxxx", "MASTER")
+        coll_cherry = collectionz.create_collection(C, "coll_cherry", "MASTER")
 
-        Collections.linkCollectionToCollections(
-            C, coll_cherry, origScene.collection, keepLinks=False)
+        collectionz.link_collection_to_collections(
+            C, coll_cherry, orig_scene.collection, keep_links=False)
 
-        coll_dewberry = Collections.createCollection(
-            C, "coll_dewberry", origScene.collection)
-        coll_blueberry = Collections.createCollection(
+        coll_dewberry = collectionz.create_collection(
+            C, "coll_dewberry", orig_scene.collection)
+        coll_blueberry = collectionz.create_collection(
             C, "coll_blueberry", coll_dewberry)
-        coll_babaco = Collections.createCollection(
+        coll_babaco = collectionz.create_collection(
             C, "coll_babaco", coll_banana)
 
-        Collections.linkCollectionToCollections(
-            C, coll_blueberry, [coll_dewberry, coll_banana], keepLinks=False)
-        Collections.linkCollectionToCollections(
-            C, coll_blueberry, coll_apple, keepLinks=True)
+        collectionz.link_collection_to_collections(
+            C, coll_blueberry, [coll_dewberry, coll_banana], keep_links=False)
+        collectionz.link_collection_to_collections(
+            C, coll_blueberry, coll_apple, keep_links=True)
 
-        Collections.linkObjectToCollections(
-            C, obj1, [coll_apple, coll_dewberry], keepLinks=False)
-        Collections.linkObjectToCollections(
-            C, obj2, [coll_apple, coll_dewberry], keepLinks=False)
-        Collections.linkObjectToCollections(
-            C, obj1, [coll_babaco, coll_cherry], keepLinks=False)
-        Collections.linkObjectToCollections(
-            C, obj2, [coll_babaco, coll_cherry], keepLinks=True)
+        collectionz.link_object_to_collections(
+            C, obj1, [coll_apple, coll_dewberry], keep_links=False)
+        collectionz.link_object_to_collections(
+            C, obj2, [coll_apple, coll_dewberry], keep_links=False)
+        collectionz.link_object_to_collections(
+            C, obj1, [coll_babaco, coll_cherry], keep_links=False)
+        collectionz.link_object_to_collections(
+            C, obj2, [coll_babaco, coll_cherry], keep_links=True)
 
-        masterColl = origScene.collection  # of the current scene
+        master_coll = orig_scene.collection  # of the current scene
 
         # reset the scene to original
         # for some reason doesn't work anymore: it will show you that it successfully switched, but after the script has finished you will see it hasn't. But it isn't important, so ignore it.
-        C.window.scene = origScene
+        C.window.scene = orig_scene
 
         # testing - this is based on the assumptions in the notes at the beginning
         # note that you can't test "collectionX in collectionY.children". Instead you need to write "collectionX.name in collectionY.children"
         for coll in [coll_apple, coll_banana, coll_cherry, coll_dewberry]:
-            if (coll.name in masterColl.children) == False or coll.users != 1:
+            if (coll.name in master_coll.children) == False or coll.users != 1:
                 return False
 
         for coll in [coll_apple, coll_banana, coll_dewberry]:
@@ -376,35 +379,36 @@ def run(context=None):
 
     # tagVertices.py
 
-    def test_tagVertices():
+    def test_tag_vertices():
         try:
-            from .. import tagVertices
-            importlib.reload(tagVertices)
+            from .. import tag_vertices
+            importlib.reload(tag_vertices)
             # tagVertices = bpy.data.texts["tagVertices.py"].as_module(
             # )
         except:
             print("COULDN'T IMPORT tagVertices")
             return False
-        testHelpers.messAround(switchScenes=True)
-        obj = testHelpers.createSubdivObj(subdivisions=2, type="PLANE")
+        test_helpers.mess_around(switch_scenes=True)
+        obj = test_helpers.create_subdiv_obj(subdivisions=2, type="PLANE")
         mesh = obj.data
         # preparing is a bool value that tracks if the preparations for the actual methods to test actually all went as planned
         # the plane should now have 25 vertices total
         preparing = len(mesh.vertices) == 25
-        vertsToTag = [22, 18, 15, 2, 23, 17, 11]
-        dictCoords = {}
+        verts_to_tag = [22, 18, 15, 2, 23, 17, 11]
+        dict_coords = {}
         for i in range(len(mesh.vertices)):
-            dictCoords[i] = mesh.vertices[i].co.copy()
+            dict_coords[i] = mesh.vertices[i].co.copy()
         # we will later identify vertices by their coordinates as comparison
 
-        resultDict = tagVertices.TagVertices.tag(C, mesh, "test", vertsToTag)
+        result_dict = tag_vertices.TagVertices.tag(
+            C, mesh, "test", verts_to_tag)
 
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
         bpy.ops.object.mode_set(mode='OBJECT')
-        vertsToDelete = [7, 16, 23, 11, 19, 22, 21]
+        verts_to_delete = [7, 16, 23, 11, 19, 22, 21]
         # deleting vertices changes the indices of almost all other vertices. We also delete some tagged vertices.
-        for index in vertsToDelete:
+        for index in verts_to_delete:
             mesh.vertices[index].select = True
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.delete(type='VERT')  # delete the (selected) verts
@@ -413,28 +417,28 @@ def run(context=None):
         # print(len(mesh.vertices))
         # only 18 vertices should exist now
 
-        testHelpers.messAround(switchScenes=True)  # very important
+        test_helpers.mess_around(switch_scenes=True)  # very important
 
-        comparisonDict = {}  # oldIndex is which newIndex?
+        comparison_dict = {}  # oldIndex is which newIndex?
         for i in range(25):
-            comparisonDict[i] = -1  # Default, Vertex has been deleted
-        for newIndex in range(len(mesh.vertices)):
+            comparison_dict[i] = -1  # Default, Vertex has been deleted
+        for new_index in range(len(mesh.vertices)):
 
-            newCoordinate = mesh.vertices[newIndex].co.copy()
-            for oldIndex in range(25):
-                oldCoordinate = dictCoords[oldIndex]
-                distance = (newCoordinate-oldCoordinate).length
+            new_coordinate = mesh.vertices[new_index].co.copy()
+            for old_index in range(25):
+                old_coordinate = dict_coords[old_index]
+                distance = (new_coordinate - old_coordinate).length
 
-                if math.isclose((newCoordinate-oldCoordinate).length, 0, abs_tol=0.01):
-                    comparisonDict[oldIndex] = newIndex
+                if math.isclose((new_coordinate - old_coordinate).length, 0, abs_tol=0.01):
+                    comparison_dict[old_index] = new_index
                     # print(distance)
                     # print(comparisonDict[oldIndex])
                     break
 
         # print(comparisonDict)
 
-        tagResultList = tagVertices.TagVertices.identifyVerts(C,
-                                                              mesh, resultDict["LAYERNAME"], resultDict["LAYERVALUES"])
+        tag_result_list = tag_vertices.TagVertices.identify_verts(C,
+                                                                  mesh, result_dict["LAYERNAME"], result_dict["LAYERVALUES"])
 
         if preparing == False:
             print("preparing for vertex tagging didnt work as planned")
@@ -449,14 +453,15 @@ def run(context=None):
         #    print(str(i)+": " +
         #          str(tagResultList[i]) + " vs "+str(comparisonDict[i]))
 
-        for oldIndex in vertsToTag:
-            if tagResultList[oldIndex] != comparisonDict[oldIndex]:
+        for old_index in verts_to_tag:
+            if tag_result_list[old_index] != comparison_dict[old_index]:
                 return False
 
         # everything is fine
         # bonus: test if datalayer is deletable
-        tagVertices.TagVertices.removeLayer(C, mesh, resultDict["LAYERNAME"])
-        testHelpers.messAround(switchScenes=True)
+        tag_vertices.TagVertices.remove_layer(
+            C, mesh, result_dict["LAYERNAME"])
+        test_helpers.mess_around(switch_scenes=True)
         if len(mesh.vertex_layers_int) != 0:
             print("data layer removal didn't work")
             return False
@@ -465,10 +470,10 @@ def run(context=None):
 
     # createRealMesh.py
 
-    def test_createRealMesh():
+    def test_create_real_mesh():
         try:
-            from .. import createRealMesh
-            importlib.reload(createRealMesh)
+            from .. import create_real_mesh
+            importlib.reload(create_real_mesh)
             #createRealMesh = bpy.data.texts["createRealMesh.py"].as_module()
         except:
             print("COULDN'T IMPORT createRealMesh")
@@ -498,29 +503,29 @@ def run(context=None):
                     3. By comparing the coordinates per vertex index we already can be sure that vertex indices didn't change
 
         """
-        def isVectorClose(v1, v2):
-            length = (v1-v2).length
+        def is_vector_close(v1, v2):
+            length = (v1 - v2).length
             return 0 == round(length, 3)
 
-        def areSameMesh(mesh1, mesh2):
+        def are_same_mesh(mesh1, mesh2):
             if len(mesh1.vertices) != len(mesh2.vertices):
                 return False
             for (v1, v2) in zip(mesh1.vertices, mesh2.vertices):
-                if isVectorClose(v1.co, v2.co) == False:
+                if is_vector_close(v1.co, v2.co) == False:
                     return False
             return True
 
-        def selectObjs(objs=[]):
+        def select_objs(objs=[]):
             # first in list will be set as active
             bpy.ops.object.select_all(action='DESELECT')
             for obj in objs:
                 obj.select_set(True)
             C.view_layer.objects.active = objs[0]
 
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
 
-        def checkMaterials(obj):
-            selectObjs([obj])
+        def check_materials(obj):
+            select_objs([obj])
             mat = D.materials.new("test")
             obj.data.materials.append(mat)
             # bpy.ops.material.new() #this doesn't work to create materials, probably some issue with context
@@ -528,51 +533,51 @@ def run(context=None):
                 print(list(obj.material_slots))
                 print(list(obj.data.materials))
                 return False
-            newMeshWithoutMat = createRealMesh.createRealMeshCopy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False, keepMaterials=False)
-            newObjWithoutMat = createRealMesh.createNewObjforMesh(
-                context=C, name="newObj", mesh=newMeshWithoutMat)
-            newMeshWithMat = createRealMesh.createRealMeshCopy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False, keepMaterials=True)
-            newObjWithMat = createRealMesh.createNewObjforMesh(
-                context=C, name="newObj", mesh=newMeshWithMat)
+            new_mesh_without_mat = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False, keep_materials=False)
+            new_obj_without_mat = create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh_without_mat)
+            new_mesh_with_mat = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False, keep_materials=True)
+            new_obj_with_mat = create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh_with_mat)
 
-            if len(newObjWithoutMat.material_slots) != 0 or len(newMeshWithoutMat.materials) != 0:
+            if len(new_obj_without_mat.material_slots) != 0 or len(new_mesh_without_mat.materials) != 0:
                 return False
-            if len(newObjWithMat.material_slots) == 0 or len(newMeshWithMat.materials) == 0:
+            if len(new_obj_with_mat.material_slots) == 0 or len(new_mesh_with_mat.materials) == 0:
                 return False
-            if (areSameMesh(obj.data, newMeshWithoutMat) == False) or (areSameMesh(obj.data, newMeshWithMat) == False):
+            if (are_same_mesh(obj.data, new_mesh_without_mat) == False) or (are_same_mesh(obj.data, new_mesh_with_mat) == False):
                 return False
             return True
 
-        def checkTextures(obj):
+        def check_textures(obj):
             # I know so little about textures that I didn't even manage to create a single one
             return True
 
-        def checkShapeKeys(obj):
+        def check_shape_keys(obj):
             bpy.ops.object.shape_key_add(from_mix=False)  # Basis
             bpy.ops.object.shape_key_add(from_mix=False)  # new One
-            skBasis = obj.data.shape_keys.reference_key
+            sk_basis = obj.data.shape_keys.reference_key
             for sk in obj.data.shape_keys.key_blocks:
-                if sk != skBasis:
+                if sk != sk_basis:
                     sk2 = sk
             sk2.data[1].co = [1.3, 41, 2.7]  # coordinate of vertex #1
             sk2.data[3].co = [0, 1, 67]
             sk2.value = 1
-            newMesh = createRealMesh.createRealMeshCopy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
-            newObj = createRealMesh.createNewObjforMesh(
-                context=C, name="newObj", mesh=newMesh)
-            selectObjs([obj])
+            new_mesh = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
+            new_obj = create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh)
+            select_objs([obj])
             C.object.active_shape_key_index = 0  # index of BasisSK
             bpy.ops.object.shape_key_remove(all=False)
             bpy.ops.object.shape_key_remove(all=False)
             # both shapekeys removed, but no obj shape = shape of sk2
-            if areSameMesh(obj.data, newMesh) == False:
+            if are_same_mesh(obj.data, new_mesh) == False:
                 return False
             return True
 
-        def checkVertexGroups(obj):
+        def check_vertex_groups(obj):
             bpy.ops.object.vertex_group_add()
             bpy.ops.object.mode_set_with_submode(
                 mode='EDIT', mesh_select_mode={"VERT"})
@@ -583,78 +588,78 @@ def run(context=None):
                 return False
             obj.data.vertices[0].groups[0].weight = 0.5
             for b in (True, False, True, False):  # test if keepVertexGroups parameter works as well
-                newMesh = createRealMesh.createRealMeshCopy(
-                    context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=b)
-                newObj = createRealMesh.createNewObjforMesh(
-                    context=C, name="newObj", mesh=newMesh)
-                if (not (len(newMesh.vertices[0].groups) == 0 and len(newObj.vertex_groups) == 0)) == (not b):
+                new_mesh = create_real_mesh.create_real_mesh_copy(
+                    context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=b)
+                new_obj = create_real_mesh.create_new_obj_for_mesh(
+                    context=C, name="newObj", mesh=new_mesh)
+                if (not (len(new_mesh.vertices[0].groups) == 0 and len(new_obj.vertex_groups) == 0)) == (not b):
                     print("B")
                     return False
-                if areSameMesh(obj.data, newMesh) == False:
+                if are_same_mesh(obj.data, new_mesh) == False:
                     print("C")
                     return False
-                if b == True and (round(newMesh.vertices[0].groups[0].weight, 4) != round(0.5, 4)):
+                if b == True and (round(new_mesh.vertices[0].groups[0].weight, 4) != round(0.5, 4)):
                     print("D")
                     return False
             return True
 
-        def checkParents(obj):
-            parentObj = testHelpers.createSubdivObj(
+        def check_parents(obj):
+            parent_obj = test_helpers.create_subdiv_obj(
                 subdivisions=0, type="PLANE")
-            selectObjs([parentObj, obj])
+            select_objs([parent_obj, obj])
             bpy.ops.object.parent_set(type='OBJECT', keep_transform=False)
-            parentObj.location = [1, 2, 3]
-            if obj.parent != parentObj:
+            parent_obj.location = [1, 2, 3]
+            if obj.parent != parent_obj:
                 return False
-            newMesh = createRealMesh.createRealMeshCopy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
-            newObj = createRealMesh.createNewObjforMesh(
-                context=C, name="newObj", mesh=newMesh)
-            if newObj.parent != None:
+            new_mesh = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
+            new_obj = create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh)
+            if new_obj.parent != None:
                 return False
-            selectObjs([obj])
+            select_objs([obj])
             bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
             bpy.ops.object.transform_apply(
                 location=True, rotation=True, scale=True)
-            if areSameMesh(newMesh, obj.data) == False:
+            if are_same_mesh(new_mesh, obj.data) == False:
                 return False
             return True
 
-        def checkConstraints(obj):
-            constrainObj = testHelpers.createSubdivObj(
+        def check_constraints(obj):
+            constrain_obj = test_helpers.create_subdiv_obj(
                 subdivisions=0, type="CUBE")
-            constrainObj.location = [2, 3, 4]
-            selectObjs([obj])
+            constrain_obj.location = [2, 3, 4]
+            select_objs([obj])
             bpy.ops.object.constraint_add(type='COPY_LOCATION')
-            newConstraint = obj.constraints[0]
-            newConstraint.target = constrainObj
-            newMesh = createRealMesh.createRealMeshCopy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
-            newObj = createRealMesh.createNewObjforMesh(
-                context=C, name="newObj", mesh=newMesh)
-            selectObjs([obj])
+            new_constraint = obj.constraints[0]
+            new_constraint.target = constrain_obj
+            new_mesh = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
+            new_obj = create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh)
+            select_objs([obj])
             bpy.ops.constraint.apply(
-                constraint=newConstraint.name, owner='OBJECT')
+                constraint=new_constraint.name, owner='OBJECT')
             bpy.ops.object.transform_apply(
                 location=True, rotation=True, scale=True)
-            if len(newObj.constraints) != 0:
+            if len(new_obj.constraints) != 0:
                 return False
-            if areSameMesh(newMesh, obj.data) == False:
+            if are_same_mesh(new_mesh, obj.data) == False:
                 return False
             return True
 
-        def checkTransformations(obj):
+        def check_transformations(obj):
             obj.location = [3, 4, 5]
             obj.delta_location = [1, 1.5, 7]
             obj.rotation_euler = [2, 5, 1]
             obj.delta_rotation_euler = [9, 8, 0]
             obj.scale = [5, 6, 7]
             obj.delta_scale = [0.5, 0.2, 0.1]
-            newMesh = createRealMesh.createRealMeshCopy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
-            newObj = createRealMesh.createNewObjforMesh(
-                context=C, name="newObj", mesh=newMesh)
-            selectObjs([obj])
+            new_mesh = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
+            new_obj = create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh)
+            select_objs([obj])
             bpy.ops.object.transforms_to_deltas(mode='ALL')
             obj.location = obj.delta_location.copy()
             obj.delta_location = [0, 0, 0]
@@ -665,81 +670,81 @@ def run(context=None):
             bpy.ops.object.transform_apply(
                 location=True, rotation=True, scale=True)
             # believe it or not, but it seems like you cannot just "apply" delta transforms like with normal transforms
-            if areSameMesh(obj.data, newMesh) == False:
+            if are_same_mesh(obj.data, new_mesh) == False:
                 return False
             return True
 
-        def checkCustomProperties(obj):
+        def check_custom_properties(obj):
             # "cycles" seems to be standart property, so at least a length of 1
-            originalAmount = len(C.object.data.keys())
+            original_amount = len(C.object.data.keys())
             bpy.ops.wm.properties_add(data_path="object.data")
-            newMesh = createRealMesh.createRealMeshCopy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keepVertexGroups=False)
-            newObj = createRealMesh.createNewObjforMesh(
-                context=C, name="newObj", mesh=newMesh)
-            if len(newMesh.keys()) != originalAmount:
+            new_mesh = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
+            new_obj = create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh)
+            if len(new_mesh.keys()) != original_amount:
                 return False
             return True
 
-        for func in (checkMaterials, checkTextures, checkShapeKeys, checkVertexGroups, checkParents, checkConstraints, checkTransformations, checkCustomProperties):
-            testHelpers.messAround(switchScenes=False)
-            obj = testHelpers.createSubdivObj(subdivisions=3, type="CUBE")
+        for func in (check_materials, check_textures, check_shape_keys, check_vertex_groups, check_parents, check_constraints, check_transformations, check_custom_properties):
+            test_helpers.mess_around(switch_scenes=False)
+            obj = test_helpers.create_subdiv_obj(subdivisions=3, type="CUBE")
             obj.location = [0, 0, 0]
             obj.rotation_euler = [0, 0, 0]
             obj.scale = [1, 1, 1]
             if func(obj) == False:
-                print("subTest of "+func.__name__ + " failed!")
+                print("subTest of " + func.__name__ + " failed!")
                 return False
 
         return True
 
     # deleteStuff.py
 
-    def test_delete_VertsFacesEdges():
+    def test_delete_verts_faces_edges():
         try:
-            from .. import deleteStuff
-            importlib.reload(deleteStuff)
+            from .. import delete_stuff
+            importlib.reload(delete_stuff)
             #deleteStuff = bpy.data.texts["deleteStuff.py"].as_module()
         except:
             print("COULDN'T IMPORT deleteStuff")
             return False
 
-        def newPlane():
-            obj = testHelpers.createSubdivObj(subdivisions=3, type="PLANE")
+        def new_plane():
+            obj = test_helpers.create_subdiv_obj(subdivisions=3, type="PLANE")
             obj.name = "testDeletionPlane_1"
             mesh = obj.data
-            testHelpers.messAround(switchScenes=True)
+            test_helpers.mess_around(switch_scenes=True)
             return mesh
 
         # test if vectors are approx. the same while allowing some precision offset
-        def vectorMatch(v1, v2):
-            if math.isclose((v1-v2).length, 0, abs_tol=0.01):
+        def vector_match(v1, v2):
+            if math.isclose((v1 - v2).length, 0, abs_tol=0.01):
                 return True
             else:
                 return False
 
-        def findEdgeFromCoordinates(co1, co2, mesh):
+        def find_edge_from_coordinates(co1, co2, mesh):
             co1 = mathutils.Vector(co1)
             co2 = mathutils.Vector(co2)
             for edge in mesh.edges:
-                edgeVert1 = mesh.vertices[edge.vertices[0]]
-                edgeVert2 = mesh.vertices[edge.vertices[1]]
-                if vectorMatch(edgeVert1.co, co1) or vectorMatch(edgeVert1.co, co2):
-                    if vectorMatch(edgeVert2.co, co1) or vectorMatch(edgeVert2.co, co2):
+                edge_vert1 = mesh.vertices[edge.vertices[0]]
+                edge_vert2 = mesh.vertices[edge.vertices[1]]
+                if vector_match(edge_vert1.co, co1) or vector_match(edge_vert1.co, co2):
+                    if vector_match(edge_vert2.co, co1) or vector_match(edge_vert2.co, co2):
                         return edge.index
             return -1  # when no match was found
 
-        def findFaceFromCoordinates(center_co, mesh):
+        def find_face_from_coordinates(center_co, mesh):
             center_co = mathutils.Vector(center_co)
             for face in mesh.polygons:
-                if vectorMatch(center_co, face.center):
+                if vector_match(center_co, face.center):
                     return face.index
             return -1
 
-        def findVertexFromCoordinates(co, mesh):
+        def find_vertex_from_coordinates(co, mesh):
             co = mathutils.Vector(co)
             for vert in mesh.vertices:
-                if vectorMatch(vert.co, co):
+                if vector_match(vert.co, co):
                     return vert.index
             return -1
 
@@ -758,64 +763,65 @@ def run(context=None):
         # 3. Vertices
         vertices = [(0.5, 0.25, 0.0), (-0.5, -0.25, 0.0)]  # 62, 53
         # 4. Another Face (center coordinate)
-        totalVerts = 81
-        totalEdges = 144
-        totalFaces = 64
+        total_verts = 81
+        total_edges = 144
+        total_faces = 64
 
         # To be able to do this test stuff in a loop, we create dictionaries for each run
-        vertInformationONE = {"type": "VERTEX", "coordinatesToDelete": vertices, "deleteChildElements": False, "expectedResults": {
-            "verts": totalVerts-2, "edges": totalEdges-8, "faces": totalFaces-8}}
-        edgeInformationONE = {"type": "EDGE", "coordinatesToDelete": edges, "deleteChildElements": False, "expectedResults": {
-            "verts": totalVerts-0, "edges": totalEdges-2, "faces": totalFaces-4}}
-        edgeInformationTWO = {"type": "EDGE", "coordinatesToDelete": edges, "deleteChildElements": True, "expectedResults": {
-            "verts": totalVerts-4, "edges": totalEdges-14, "faces": totalFaces-12}}
-        faceInformationONE = {"type": "FACE", "coordinatesToDelete": faces, "deleteChildElements": False, "expectedResults": {
-            "verts": totalVerts-0, "edges": totalEdges-0, "faces": totalFaces-2}}
-        faceInformationTWO = {"type": "FACE", "coordinatesToDelete": faces, "deleteChildElements": True, "expectedResults": {
-            "verts": totalVerts-8, "edges": totalEdges-24, "faces": totalFaces-18}}
+        vert_information_ONE = {"type": "VERTEX", "coordinatesToDelete": vertices, "deleteChildElements": False, "expectedResults": {
+            "verts": total_verts - 2, "edges": total_edges - 8, "faces": total_faces - 8}}
+        edge_information_ONE = {"type": "EDGE", "coordinatesToDelete": edges, "deleteChildElements": False, "expectedResults": {
+            "verts": total_verts - 0, "edges": total_edges - 2, "faces": total_faces - 4}}
+        edge_information_TWO = {"type": "EDGE", "coordinatesToDelete": edges, "deleteChildElements": True, "expectedResults": {
+            "verts": total_verts - 4, "edges": total_edges - 14, "faces": total_faces - 12}}
+        face_information_ONE = {"type": "FACE", "coordinatesToDelete": faces, "deleteChildElements": False, "expectedResults": {
+            "verts": total_verts - 0, "edges": total_edges - 0, "faces": total_faces - 2}}
+        face_information_TWO = {"type": "FACE", "coordinatesToDelete": faces, "deleteChildElements": True, "expectedResults": {
+            "verts": total_verts - 8, "edges": total_edges - 24, "faces": total_faces - 18}}
 
-        for specificDict in [vertInformationONE, edgeInformationONE, edgeInformationTWO, faceInformationONE, faceInformationTWO]:
-            testHelpers.messAround(switchScenes=True)
-            mesh = newPlane()
+        for specific_dict in [vert_information_ONE, edge_information_ONE, edge_information_TWO, face_information_ONE, face_information_TWO]:
+            test_helpers.mess_around(switch_scenes=True)
+            mesh = new_plane()
             # getting the indices of the elements
             indices = []
-            for something in specificDict["coordinatesToDelete"]:
-                if specificDict["type"] == "VERTEX":
-                    indices.append(findVertexFromCoordinates(something, mesh))
-                elif specificDict["type"] == "EDGE":
-                    indices.append(findEdgeFromCoordinates(
+            for something in specific_dict["coordinatesToDelete"]:
+                if specific_dict["type"] == "VERTEX":
+                    indices.append(
+                        find_vertex_from_coordinates(something, mesh))
+                elif specific_dict["type"] == "EDGE":
+                    indices.append(find_edge_from_coordinates(
                         something[0], something[1], mesh))
-                elif specificDict["type"] == "FACE":
-                    indices.append(findFaceFromCoordinates(something, mesh))
+                elif specific_dict["type"] == "FACE":
+                    indices.append(find_face_from_coordinates(something, mesh))
 
-            deleteStuff.delete_VertsFacesEdges(
-                C, mesh, indices, specificDict["type"], specificDict["deleteChildElements"])
-            testHelpers.messAround(switchScenes=True)
+            delete_stuff.delete_verts_faces_edges(
+                C, mesh, indices, specific_dict["type"], specific_dict["deleteChildElements"])
+            test_helpers.mess_around(switch_scenes=True)
 
-            if len(mesh.vertices) != specificDict["expectedResults"]["verts"] or len(mesh.edges) != specificDict["expectedResults"]["edges"] or len(mesh.polygons) != specificDict["expectedResults"]["faces"]:
+            if len(mesh.vertices) != specific_dict["expectedResults"]["verts"] or len(mesh.edges) != specific_dict["expectedResults"]["edges"] or len(mesh.polygons) != specific_dict["expectedResults"]["faces"]:
                 print("\nError: see data below")
-                print("parameters:  " + specificDict["type"] + ", " +
-                      str(specificDict["deleteChildElements"])+"\n")
+                print("parameters:  " + specific_dict["type"] + ", " +
+                      str(specific_dict["deleteChildElements"]) + "\n")
                 print("expected / actualResult")
                 print(
-                    "verts: "+str(specificDict["expectedResults"]["verts"])+"/"+str(len(mesh.vertices)))
+                    "verts: " + str(specific_dict["expectedResults"]["verts"]) + "/" + str(len(mesh.vertices)))
                 print(
-                    "edges: "+str(specificDict["expectedResults"]["edges"])+"/"+str(len(mesh.edges)))
+                    "edges: " + str(specific_dict["expectedResults"]["edges"]) + "/" + str(len(mesh.edges)))
                 print(
-                    "faces: "+str(specificDict["expectedResults"]["faces"])+"/"+str(len(mesh.polygons)))
-                print("\nmesh name: "+mesh.name)
+                    "faces: " + str(specific_dict["expectedResults"]["faces"]) + "/" + str(len(mesh.polygons)))
+                print("\nmesh name: " + mesh.name)
 
                 return False
 
             # check if the elements we wanted to delete really have been deleted
-            for something in specificDict["coordinatesToDelete"]:
-                if specificDict["type"] == "VERTEX":
-                    index = findVertexFromCoordinates(something, mesh)
-                elif specificDict["type"] == "EDGE":
-                    index = findEdgeFromCoordinates(
+            for something in specific_dict["coordinatesToDelete"]:
+                if specific_dict["type"] == "VERTEX":
+                    index = find_vertex_from_coordinates(something, mesh)
+                elif specific_dict["type"] == "EDGE":
+                    index = find_edge_from_coordinates(
                         something[0], something[1], mesh)
-                elif specificDict["type"] == "FACE":
-                    index = findFaceFromCoordinates(something, mesh)
+                elif specific_dict["type"] == "FACE":
+                    index = find_face_from_coordinates(something, mesh)
 
                 if index != -1:  # no element with those coordinates should be found, since we deleted them
                     return False
@@ -824,20 +830,20 @@ def run(context=None):
 
     def test_coordinateStuff():
         try:
-            from .. import coordinatesStuff
-            importlib.reload(coordinatesStuff)
+            from .. import coordinates_stuff
+            importlib.reload(coordinates_stuff)
             # coordinatesStuff = bpy.data.texts["coordinatesStuff.py"].as_module(
             # )
         except Exception as exception:
             print("COULDN'T IMPORT coordinatesStuff")
-            print("Exception message:\n"+str(exception))
+            print("Exception message:\n" + str(exception))
             return False
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
         bpy.ops.mesh.primitive_plane_add()
         obj = C.object
         mesh = obj.data
-        coordinates = coordinatesStuff.getVertexCoordinates(C, mesh, [1, 3])
-        if coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 6) == True:
+        coordinates = coordinates_stuff.get_vertex_coordinates(C, mesh, [1, 3])
+        if coordinates_stuff.is_vector_close(C, coordinates[1], coordinates[3], 6) == True:
             return False
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
@@ -848,100 +854,104 @@ def run(context=None):
         bpy.ops.transform.resize(value=(0.001, 0.001, 0.001), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True,
                                  use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
         bpy.ops.object.mode_set(mode='OBJECT')
-        coordinates = coordinatesStuff.getVertexCoordinates(C, mesh, "ALL")
+        coordinates = coordinates_stuff.get_vertex_coordinates(C, mesh, "ALL")
         # after resizing, two vertices of the plane (if not diagonal) should have a distance of 0.002 meters
-        if coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 6) == True or coordinatesStuff.isVectorClose(C, coordinates[1], coordinates[3], 2) == False:
+        if coordinates_stuff.is_vector_close(C, coordinates[1], coordinates[3], 6) == True or coordinates_stuff.is_vector_close(C, coordinates[1], coordinates[3], 2) == False:
             return False
 
         try:
             # I ain't gonna code another function with bpy.ops that does this stuff
             # because I tried
             # and ran into weird and annoying bugs
-            from .. import createRealMesh
-            importlib.reload(createRealMesh)
+            from .. import create_real_mesh
+            importlib.reload(create_real_mesh)
         except:
             print("Couldn't import a required module (createRealMesh)")
             return False
 
         # Testing the rotation handler class
-        RotHandler = coordinatesStuff.RotationHandling
+        Rot_Handler = coordinates_stuff.RotationHandling
 
-        objSuzanneBasic = testHelpers.createSubdivObj(
+        obj_suzanne_basic = test_helpers.create_subdiv_obj(
             0, "MONKEY")  # without any rotations
 
-        differentRotations = {"ZXY": ("rotation_euler", mathutils.Euler((1, 5, 2), "ZXY"), False),
-                              "QUATERNION": ("rotation_quaternion", mathutils.Quaternion(
-                                  (0.5, 2.5112, 0.003), 7), False),
-                              "XZY": ("rotation_euler", mathutils.Euler((7, 2, 6), "XZY"), False),
-                              "AXIS_ANGLE": ("rotation_axis_angle", (9, 6, 3.512, 4.4444), False),
-                              "AXIS_ANGLE": ("rotation_axis_angle", (mathutils.Vector((5, 7, 1)), 9), True)
-                              }
+        different_rotations = {"ZXY": ("rotation_euler", mathutils.Euler((1, 5, 2), "ZXY"), False),
+                               "QUATERNION": ("rotation_quaternion", mathutils.Quaternion(
+                                   (0.5, 2.5112, 0.003), 7), False),
+                               "XZY": ("rotation_euler", mathutils.Euler((7, 2, 6), "XZY"), False),
+                               "AXIS_ANGLE": ("rotation_axis_angle", (9, 6, 3.512, 4.4444), False),
+                               "AXIS_ANGLE": ("rotation_axis_angle", (mathutils.Vector((5, 7, 1)), 9), True)
+                               }
 
         for i in [True, False]:
 
-            for (rotation_mode, vectorNameAndValues) in differentRotations.items():
-                attrName = vectorNameAndValues[0]
-                rVector = vectorNameAndValues[1]
-                specialAxisAngle = vectorNameAndValues[2]
+            for (rotation_mode, vector_name_and_values) in different_rotations.items():
+                attr_name = vector_name_and_values[0]
+                r_vector = vector_name_and_values[1]
+                special_axis_angle = vector_name_and_values[2]
                 # requires special handling because otherwise exceptions will arise
 
-                objSuzanneComparison = testHelpers.createSubdivObj(0, "MONKEY")
-                objSuzanneComparison.rotation_mode = rotation_mode
-                if specialAxisAngle == False:
-                    setattr(objSuzanneComparison, attrName, rVector)
+                obj_suzanne_comparison = test_helpers.create_subdiv_obj(
+                    0, "MONKEY")
+                obj_suzanne_comparison.rotation_mode = rotation_mode
+                if special_axis_angle == False:
+                    setattr(obj_suzanne_comparison, attr_name, r_vector)
                 else:
-                    setattr(objSuzanneComparison,
+                    setattr(obj_suzanne_comparison,
                             "rotation_axis_angle", (9, 5, 7, 1))
 
-                if testHelpers.areObjsTheSame(context=C, obj1=objSuzanneBasic, obj2=objSuzanneComparison, mute=True) == True:
+                if test_helpers.are_objs_the_same(context=C, obj1=obj_suzanne_basic, obj2=obj_suzanne_comparison, mute=True) == True:
                     # if hasSameTransformations(objSuzanneBasic, objSuzanneComparison) == True:
                     print("x")
                     return False
 
-                for (rotation_mode_inner, vectorNameAndValues) in differentRotations.items():
-                    newAttrName = vectorNameAndValues[0]
-                    newVector = vectorNameAndValues[1]
+                for (rotation_mode_inner, vector_name_and_values) in different_rotations.items():
+                    new_attr_name = vector_name_and_values[0]
+                    new_vector = vector_name_and_values[1]
 
-                    objSuzanneWithConvertedRotation = testHelpers.createSubdivObj(
+                    obj_suzanne_with_converted_rotation = test_helpers.create_subdiv_obj(
                         0, "MONKEY")
-                    objSuzanneWithConvertedRotation.rotation_mode = rotation_mode_inner
+                    obj_suzanne_with_converted_rotation.rotation_mode = rotation_mode_inner
 
-                    if testHelpers.areObjsTheSame(context=C, obj1=objSuzanneComparison, obj2=objSuzanneWithConvertedRotation, mute=True) == True:
+                    if test_helpers.are_objs_the_same(context=C, obj1=obj_suzanne_comparison, obj2=obj_suzanne_with_converted_rotation, mute=True) == True:
                         return False
 
-                    rotHandler = RotHandler()
-                    rotHandler.setRotationTypeOfSourceVector(C, rVector)
-                    rotHandler.setRotationTypeOfTargetVector(C, newVector)
-                    if i == False and specialAxisAngle == False:
+                    rot_handler = Rot_Handler()
+                    rot_handler.set_rotation_type_of_source_vector(C, r_vector)
+                    rot_handler.set_rotation_type_of_target_vector(
+                        C, new_vector)
+                    if i == False and special_axis_angle == False:
                         # important especially in the context of axis_angle, because we supply a tuple but the object will have a bpy_float array instead
-                        realRVector = getattr(objSuzanneComparison, attrName)
+                        real_r_vector = getattr(
+                            obj_suzanne_comparison, attr_name)
                     else:
-                        realRVector = rVector
-                    convertedVector = rotHandler.convertRotationVectorToTarget(
-                        C, realRVector)
-                    setattr(objSuzanneWithConvertedRotation,
-                            newAttrName, convertedVector)
-                    if testHelpers.areObjsTheSame(context=C, obj1=objSuzanneComparison, obj2=objSuzanneWithConvertedRotation, mute=False) == False:
+                        real_r_vector = r_vector
+                    converted_vector = rot_handler.convert_rotation_vector_to_target(
+                        C, real_r_vector)
+                    setattr(obj_suzanne_with_converted_rotation,
+                            new_attr_name, converted_vector)
+                    if test_helpers.are_objs_the_same(context=C, obj1=obj_suzanne_comparison, obj2=obj_suzanne_with_converted_rotation, mute=False) == False:
                         return False
-                    D.objects.remove(objSuzanneWithConvertedRotation)
+                    D.objects.remove(obj_suzanne_with_converted_rotation)
 
-                    if specialAxisAngle == False:
-                        setattr(objSuzanneComparison, attrName, rVector)
+                    if special_axis_angle == False:
+                        setattr(obj_suzanne_comparison, attr_name, r_vector)
                     else:
-                        setattr(objSuzanneComparison, attrName, (9, 5, 7, 1))
+                        setattr(obj_suzanne_comparison,
+                                attr_name, (9, 5, 7, 1))
 
         return True
 
-    def test_everythingKeyFrames():
+    def test_everything_key_frames():
         try:
-            from .. import everythingKeyFrames
-            importlib.reload(everythingKeyFrames)
+            from .. import everything_key_frames
+            importlib.reload(everything_key_frames)
             # everythingKeyFrames = bpy.data.texts["everythingKeyFrames.py"].as_module(
             # )
         except:
             print("COULDN'T IMPORT everythingKeyFrames")
             return False
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
         frame = 199
         C.scene.frame_set(frame)
 
@@ -951,33 +961,34 @@ def run(context=None):
 
         bpy.ops.mesh.primitive_cube_add()
         obj = C.object
-        origLocations = [obj.location.x, obj.location.y]
+        orig_locations = [obj.location.x, obj.location.y]
         # [0,1] are the indices of x and y in vectors
-        for (listOrDict, axis) in zip([[frame-8, 0.5555, frame+8, 1, frame-12, 0], {frame-8: 0.5555, frame+8: 1, frame-12: 0}], [0, 1]):
+        for (list_or_dict, axis) in zip([[frame - 8, 0.5555, frame + 8, 1, frame - 12, 0], {frame - 8: 0.5555, frame + 8: 1, frame - 12: 0}], [0, 1]):
 
-            action = everythingKeyFrames.getOrCreateAction(C, obj)
+            action = everything_key_frames.get_or_create_action(C, obj)
             fcurve = action.fcurves.new("location", index=axis)
-            everythingKeyFrames.createKeyFramesFast(C, fcurve, listOrDict)
-            for (changedFrame, value) in zip([frame-8, frame+8, frame-12], [0.5555, 1, 0]):
-                C.scene.frame_set(changedFrame)
-                currentLocation = round(obj.location[axis], 5)
-                expectedLocation = round(origLocations[axis]+value, 5)
-                if currentLocation != expectedLocation:
+            everything_key_frames.create_key_frames_fast(
+                C, fcurve, list_or_dict)
+            for (changed_frame, value) in zip([frame - 8, frame + 8, frame - 12], [0.5555, 1, 0]):
+                C.scene.frame_set(changed_frame)
+                current_location = round(obj.location[axis], 5)
+                expected_location = round(orig_locations[axis] + value, 5)
+                if current_location != expected_location:
                     print("Wrong locations found:" +
-                          str(currentLocation)+" "+str(expectedLocation))
+                          str(current_location) + " " + str(expected_location))
                     return False
 
         return True
 
-    def test_vertexGroups():
+    def test_vertex_groups():
         try:
-            from .. import vertexGroups
-            importlib.reload(vertexGroups)
+            from .. import vertex_groups
+            importlib.reload(vertex_groups)
             # vertexGroups = bpy.data.texts["vertexGroups.py"].as_module()
         except:
             print("COULDN'T IMPORT vertexGroups")
             return False
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
         """
         - Create 3 lists/dictionaries:
             1. list_uniform: Contains a bunch of vertex indices that are supposed to get a uniformal weight in the VG
@@ -1013,88 +1024,91 @@ def run(context=None):
         """
         # lists/dictionaries     Our plane is subdivided 3 times, giving it a total of 81 vertices
         list_uniform = [5, -1, 100, 65, 81, 8, 0, 2, 2, 2, 30]
-        uniformValue = 0.455
+        uniform_value = 0.455
         dict_specific = {0.3: [-1, 100], 0.5: [65, 2], 1: [4, 5, 6, 7, 8]}
         list_unchanged = [10, 11, 12, 45, 46, 47, 30, 5]
         unchaged_uniform_value = 0.111
         # some indices here are in none of the lists above
         list_remove = [-1, 100, 2, 8, 11, 12, ]
 
-        def getOverlaps(list1, list2):
+        def get_overlaps(list1, list2):
             intersections = set(list1).intersection(list2)
             return list(intersections)
 
-        def removeInvalidIndices(list1):
-            return list(vertexGroups.validateVertIndicesForVG(context=C, vertexGroupOrMesh=obj.data, vertIndices=list1, returnType="set"))
+        def remove_invalid_indices(list1):
+            return list(vertex_groups.validate_vert_indices_for_vg(context=C, vertex_group_or_mesh=obj.data, vert_indices=list1, return_type="set"))
 
-        obj = testHelpers.createSubdivObj(subdivisions=3, type="PLANE")
+        obj = test_helpers.create_subdiv_obj(subdivisions=3, type="PLANE")
         # just to remove the selection and active status from the plane
-        testHelpers.createSubdivObj(subdivisions=0, type="CUBE")
+        test_helpers.create_subdiv_obj(subdivisions=0, type="CUBE")
         if C.object == obj or obj.select_get() == True:
             return False  # this shouldnt happen but you never know
 
-        vg1 = vertexGroups.createVertexGroup(context=C, obj=obj, vgName="VG1")
-        vg2 = vertexGroups.createVertexGroup(context=C, obj=obj, vgName="VG2")
+        vg1 = vertex_groups.create_vertex_group(
+            context=C, obj=obj, vg_name="VG1")
+        vg2 = vertex_groups.create_vertex_group(
+            context=C, obj=obj, vg_name="VG2")
         if obj.vertex_groups.active != None:
             return False
-        vg3 = vertexGroups.createVertexGroup(context=C, obj=obj, vgName="VG3")
+        vg3 = vertex_groups.create_vertex_group(
+            context=C, obj=obj, vg_name="VG3")
         obj.vertex_groups.active = vg3
-        vertexGroups.setVertexGroupValuesUniform(
-            context=C, vertexGroup=vg3, vertexIndices=list_unchanged, value=unchaged_uniform_value)
+        vertex_groups.set_vertex_group_values_uniform(
+            context=C, vertex_group=vg3, vertex_indices=list_unchanged, value=unchaged_uniform_value)
 
-        vertexGroups.setVertexGroupValuesSpecific(
-            context=C, vertexGroup=vg1, weightsForVerts=dict_specific)
-        vertexGroups.setVertexGroupValuesUniform(
-            context=C, vertexGroup=vg1, vertexIndices=list_uniform, value=uniformValue)
+        vertex_groups.set_vertex_group_values_specific(
+            context=C, vertex_group=vg1, weights_for_verts=dict_specific)
+        vertex_groups.set_vertex_group_values_uniform(
+            context=C, vertex_group=vg1, vertex_indices=list_uniform, value=uniform_value)
 
-        vertexGroups.setVertexGroupValuesUniform(
-            context=C, vertexGroup=vg2, vertexIndices=list_uniform, value=uniformValue)
-        vertexGroups.setVertexGroupValuesSpecific(
-            context=C, vertexGroup=vg2, weightsForVerts=dict_specific)
+        vertex_groups.set_vertex_group_values_uniform(
+            context=C, vertex_group=vg2, vertex_indices=list_uniform, value=uniform_value)
+        vertex_groups.set_vertex_group_values_specific(
+            context=C, vertex_group=vg2, weights_for_verts=dict_specific)
 
-        vertexGroups.removeVertsFromVertexGroup(
-            context=C, vertexGroup=vg1, vertIndices=list_remove, validate=True)
-        vertexGroups.removeVertsFromVertexGroup(
-            context=C, vertexGroup=vg2, vertIndices=list_remove, validate=True)
+        vertex_groups.remove_verts_from_vertex_group(
+            context=C, vertex_group=vg1, vert_indices=list_remove, validate=True)
+        vertex_groups.remove_verts_from_vertex_group(
+            context=C, vertex_group=vg2, vert_indices=list_remove, validate=True)
 
-        vertsVG1 = vertexGroups.getVertsInVertexGroup(
-            context=C, vertexGroup=vg1)
-        vertsVG2 = vertexGroups.getVertsInVertexGroup(
-            context=C, vertexGroup=vg2)
+        verts_vg1 = vertex_groups.get_verts_in_vertex_group(
+            context=C, vertex_group=vg1)
+        verts_vg2 = vertex_groups.get_verts_in_vertex_group(
+            context=C, vertex_group=vg2)
 
-        expectedVerts = list_uniform.copy()
-        for weight, indexList in dict_specific.items():
-            expectedVerts.extend(indexList)
-        expectedVerts = set(expectedVerts)
-        expectedVerts.difference_update(set(list_remove))
-        expectedVerts = removeInvalidIndices(expectedVerts)
-        expectedAmount = len(expectedVerts)
+        expected_verts = list_uniform.copy()
+        for weight, index_list in dict_specific.items():
+            expected_verts.extend(index_list)
+        expected_verts = set(expected_verts)
+        expected_verts.difference_update(set(list_remove))
+        expected_verts = remove_invalid_indices(expected_verts)
+        expected_amount = len(expected_verts)
 
-        if len(vertsVG1) != len(vertsVG2) or len(vertsVG1) != expectedAmount or len(vertsVG1) == 0:
+        if len(verts_vg1) != len(verts_vg2) or len(verts_vg1) != expected_amount or len(verts_vg1) == 0:
             return False
 
-        weightsVG1 = vertexGroups.getVertexWeights(
-            context=C, vertexGroup=vg1, vertexIndices=vertsVG1)
-        weightsVG2 = vertexGroups.getVertexWeights(
-            context=C, vertexGroup=vg2, vertexIndices=vertsVG2)
+        weights_vg1 = vertex_groups.get_vertex_weights(
+            context=C, vertex_group=vg1, vertex_indices=verts_vg1)
+        weights_vg2 = vertex_groups.get_vertex_weights(
+            context=C, vertex_group=vg2, vertex_indices=verts_vg2)
 
         # vg1 weights
-        for vertIndex in vertsVG1:
-            weight = round(weightsVG1[vertIndex], 3)
-            if vertIndex in list_remove:
+        for vert_index in verts_vg1:
+            weight = round(weights_vg1[vert_index], 3)
+            if vert_index in list_remove:
                 if weight != None:
                     return False
                 else:
                     continue
-            elif vertIndex in list_uniform:
-                if weight != uniformValue:
+            elif vert_index in list_uniform:
+                if weight != uniform_value:
                     return False
                 else:
                     continue
             else:
                 x = False
-                for expectedWeight, indexList in dict_specific.items():
-                    if vertIndex in indexList and weight == round(expectedWeight, 3):
+                for expected_weight, index_list in dict_specific.items():
+                    if vert_index in index_list and weight == round(expected_weight, 3):
                         x = True
                         break
                 if x == True:
@@ -1103,25 +1117,25 @@ def run(context=None):
                 return False
 
         # vg2 weights
-        for vertIndex in vertsVG2:
-            weight = round(weightsVG2[vertIndex], 3)
-            if vertIndex in list_remove:
+        for vert_index in verts_vg2:
+            weight = round(weights_vg2[vert_index], 3)
+            if vert_index in list_remove:
                 if weight != None:
                     return False
                 else:
                     continue
             x = False
-            for expectedWeight, indexList in dict_specific.items():
-                if vertIndex in indexList:
-                    if weight == round(expectedWeight, 3):
+            for expected_weight, index_list in dict_specific.items():
+                if vert_index in index_list:
+                    if weight == round(expected_weight, 3):
                         x = True
                         break
                     else:
                         return False
             if x == True:
                 continue
-            if vertIndex in list_uniform:
-                if weight == round(uniformValue, 3):
+            if vert_index in list_uniform:
+                if weight == round(uniform_value, 3):
                     continue
                 else:
                     return False
@@ -1130,15 +1144,15 @@ def run(context=None):
         if obj.vertex_groups.active_index != vg3.index or obj.vertex_groups.active != vg3:
             return False
 
-        vg3Verts = vertexGroups.getVertsInVertexGroup(
-            context=C, vertexGroup=vg3)
-        vg3Weights = vertexGroups.getVertexWeights(
-            context=C, vertexGroup=vg3, vertexIndices=vg3Verts)
+        vg3_verts = vertex_groups.get_verts_in_vertex_group(
+            context=C, vertex_group=vg3)
+        vg3_weights = vertex_groups.get_vertex_weights(
+            context=C, vertex_group=vg3, vertex_indices=vg3_verts)
 
-        if len(vg3Verts) != len(removeInvalidIndices(list_unchanged)):
+        if len(vg3_verts) != len(remove_invalid_indices(list_unchanged)):
             return False
-        for vertIndex in vg3Verts:
-            if round(vg3Weights[vertIndex], 3) != unchaged_uniform_value:
+        for vert_index in vg3_verts:
+            if round(vg3_weights[vert_index], 3) != unchaged_uniform_value:
                 return False
         return True
 
@@ -1150,9 +1164,9 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT shapekeys")
             return False
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
         subdivs = 0
-        cube = testHelpers.createSubdivObj(subdivs, type="CUBE")
+        cube = test_helpers.create_subdiv_obj(subdivs, type="CUBE")
         """
         Testing createShapekey()
         1. Create basis shapekey as the function requires it
@@ -1167,70 +1181,71 @@ def run(context=None):
         """
         C.view_layer.objects.active = cube
         bpy.ops.object.shape_key_add(from_mix=False)
-        basisSK = cube.active_shape_key
-        origCoordinates = dict()
+        basis_sk = cube.active_shape_key
+        orig_coordinates = dict()
         for vert in cube.data.vertices:
-            origCoordinates[vert.index] = [vert.co.x, vert.co.y, vert.co.z]
+            orig_coordinates[vert.index] = [vert.co.x, vert.co.y, vert.co.z]
 
-        referenceDict = {"list": [1.9],
-                         "mesh": [2.6],
-                         "dictionary": [3.5]
-                         }
-        for refKey, smallList in referenceDict.items():
-            referenceObj = testHelpers.createSubdivObj(subdivs, type="CUBE")
-            smallList.append(referenceObj)
-            C.view_layer.objects.active = referenceObj
-            tValue = smallList[0]
-            bpy.ops.transform.resize(value=(tValue, tValue, tValue), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=False,
+        reference_dict = {"list": [1.9],
+                          "mesh": [2.6],
+                          "dictionary": [3.5]
+                          }
+        for ref_key, small_list in reference_dict.items():
+            reference_obj = test_helpers.create_subdiv_obj(
+                subdivs, type="CUBE")
+            small_list.append(reference_obj)
+            C.view_layer.objects.active = reference_obj
+            t_value = small_list[0]
+            bpy.ops.transform.resize(value=(t_value, t_value, t_value), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=False,
                                      use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
-            bpy.ops.transform.translate(value=(tValue+1, tValue+1, tValue+1), orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
+            bpy.ops.transform.translate(value=(t_value + 1, t_value + 1, t_value + 1), orient_axis_ortho='X', orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL',
                                         mirror=False, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
             bpy.ops.object.transform_apply(
                 location=True, rotation=True, scale=True)
-            if refKey == "list":
-                coList = []
-                for vert in referenceObj.data.vertices:
-                    coList.extend([vert.co.x, vert.co.y, vert.co.z])
-                smallList.append(coList)
-            elif refKey == "mesh":
-                smallList.append(referenceObj.data)
-            elif refKey == "dictionary":
-                coDict = dict()
-                for vert in referenceObj.data.vertices:
-                    coDict[vert.index] = vert.co.copy()
-                smallList.append(coDict)
+            if ref_key == "list":
+                co_list = []
+                for vert in reference_obj.data.vertices:
+                    co_list.extend([vert.co.x, vert.co.y, vert.co.z])
+                small_list.append(co_list)
+            elif ref_key == "mesh":
+                small_list.append(reference_obj.data)
+            elif ref_key == "dictionary":
+                co_dict = dict()
+                for vert in reference_obj.data.vertices:
+                    co_dict[vert.index] = vert.co.copy()
+                small_list.append(co_dict)
 
-        for refkey, smallList in referenceDict.items():
-            tValue = smallList[0]
+        for refkey, small_list in reference_dict.items():
+            t_value = small_list[0]
             #refObj = smallList[1]
-            ref = smallList[2]
-            newShapekey = shapekeys.createShapekey(
+            ref = small_list[2]
+            new_shapekey = shapekeys.create_shapekey(
                 context=C, obj=cube, reference=ref)
-            smallList.append(newShapekey)
+            small_list.append(new_shapekey)
 
         for x in range(2):  # mess stuff up after the first loop was run
-            for refkey, smallList in referenceDict.items():
-                tValue = smallList[0]
-                refObj = smallList[1]
-                ref = smallList[2]
-                shKey = smallList[3]
+            for refkey, small_list in reference_dict.items():
+                t_value = small_list[0]
+                ref_obj = small_list[1]
+                ref = small_list[2]
+                sh_key = small_list[3]
                 # test if basis shapekey still holds the same coordinates as in the beginning
                 for vert in cube.data.vertices:
-                    basisSKvector = basisSK.data[vert.index].co.copy()
-                    origVector = origCoordinates[vert.index]
+                    basis_sk_vector = basis_sk.data[vert.index].co.copy()
+                    orig_vector = orig_coordinates[vert.index]
                     for xyz in [0, 1, 2]:
-                        if round(origVector[xyz], 3) != round(basisSKvector[xyz], 3):
+                        if round(orig_vector[xyz], 3) != round(basis_sk_vector[xyz], 3):
                             return False
 
                 # test if shapekey has the same coordinates as reference object mesh
                 for vert in cube.data.vertices:
                     i = vert.index
-                    SKVector = shKey.data[i].co.copy()
-                    refMeshVector = refObj.data.vertices[i].co.copy()
+                    sk_vector = sh_key.data[i].co.copy()
+                    ref_mesh_vector = ref_obj.data.vertices[i].co.copy()
                     for xyz in [0, 1, 2]:
-                        if round(SKVector[xyz], 3) != round(refMeshVector[xyz], 3):
+                        if round(sk_vector[xyz], 3) != round(ref_mesh_vector[xyz], 3):
                             return False
-            testHelpers.messAround(switchScenes=True)
+            test_helpers.mess_around(switch_scenes=True)
 
         """
         Testing muteAllShapekeys()
@@ -1243,35 +1258,35 @@ def run(context=None):
         4. unmute all except first shapekey
             - check if all are unmuted except the first
         """
-        referenceDictAsList = list(referenceDict.items(
+        reference_dict_as_list = list(reference_dict.items(
         ))  # items() returns a set and you can't use indices on that
-        firstSK = referenceDictAsList[0][1][3]
-        secondSK = referenceDictAsList[1][1][3]
-        thirdSK = referenceDictAsList[2][1][3]
+        first_sk = reference_dict_as_list[0][1][3]
+        second_sk = reference_dict_as_list[1][1][3]
+        third_sk = reference_dict_as_list[2][1][3]
 
         # mute all
-        shapekeys.muteAllShapekeys(
+        shapekeys.mute_all_shapekeys(
             context=C, mesh=cube.data, mute=True, exclude=[])
         for sk in cube.data.shape_keys.key_blocks:
             if sk.mute == False:
                 return False
-        if basisSK.mute == False:  # if for some reason it isn't included in the previous for-loop
+        if basis_sk.mute == False:  # if for some reason it isn't included in the previous for-loop
             return False
         # unmute all
-        shapekeys.muteAllShapekeys(
+        shapekeys.mute_all_shapekeys(
             context=C, mesh=cube.data, mute=False, exclude=[])
         for sk in cube.data.shape_keys.key_blocks:
             if sk.mute == True:
                 return False
 
-        shapekeys.muteAllShapekeys(
-            context=C, mesh=cube.data, mute=True, exclude=["BASIS", secondSK])
-        if firstSK.mute == False or thirdSK.mute == False or basisSK.mute == True or secondSK.mute == True:
+        shapekeys.mute_all_shapekeys(
+            context=C, mesh=cube.data, mute=True, exclude=["BASIS", second_sk])
+        if first_sk.mute == False or third_sk.mute == False or basis_sk.mute == True or second_sk.mute == True:
             return False
 
-        shapekeys.muteAllShapekeys(
-            context=C, mesh=cube.data, mute=False, exclude=[firstSK])
-        if firstSK.mute == False or thirdSK.mute == True or basisSK.mute == True or secondSK.mute == True:
+        shapekeys.mute_all_shapekeys(
+            context=C, mesh=cube.data, mute=False, exclude=[first_sk])
+        if first_sk.mute == False or third_sk.mute == True or basis_sk.mute == True or second_sk.mute == True:
             return False
 
         return True
@@ -1284,7 +1299,7 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT modifiers")
             return False
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
         """
         1. Add a few different modifiers
         2. get all their positions
@@ -1293,92 +1308,92 @@ def run(context=None):
         5. Check again
         6. repeat 4 and 5, but this time with a "negative" position
         """
-        obj = testHelpers.createSubdivObj(subdivisions=0, type="CUBE")
+        obj = test_helpers.create_subdiv_obj(subdivisions=0, type="CUBE")
         bpy.ops.object.modifier_add(type='EDGE_SPLIT')
         bpy.ops.object.modifier_add(type='MASK')
         bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
         bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
         bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
         bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
-        origScene = C.scene
-        testHelpers.messAround(switchScenes=True)
+        orig_scene = C.scene
+        test_helpers.mess_around(switch_scenes=True)
         positions = dict()  # {position: modifier}
         for mod in obj.modifiers:
-            positions[modifiers.getModifierPositionInStack(
+            positions[modifiers.get_modifier_position_in_stack(
                 context=C, modifier=mod)] = mod
-        firstMod = positions[0]
-        lastMod = positions[len(obj.modifiers)-1]
+        first_mod = positions[0]
+        last_mod = positions[len(obj.modifiers) - 1]
         # need to switch back to original scene if we want to select the obj
-        C.window.scene = origScene
+        C.window.scene = orig_scene
         C.view_layer.objects.active = obj
         with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
             # hides any print statements
             # Because the Blender code below will try to print a warning, but we don't want the user to see that
-            if bpy.ops.object.modifier_move_up(modifier=firstMod.name) != {'CANCELLED'} or bpy.ops.object.modifier_move_down(modifier=lastMod.name) != {'CANCELLED'}:
+            if bpy.ops.object.modifier_move_up(modifier=first_mod.name) != {'CANCELLED'} or bpy.ops.object.modifier_move_down(modifier=last_mod.name) != {'CANCELLED'}:
                 # trying to move a modifier up or down returns {'FINISHED'} if it can move up/down, and {'CANCELLED'} if it can't. (Meaning it already is at first/last position)
                 return False
-        testHelpers.messAround(switchScenes=True)
+        test_helpers.mess_around(switch_scenes=True)
 
         # setting the second modifier to last position in stack
-        secondMod = positions[1]
-        thirdMod = positions[2]
-        modifiers.moveModiferToPositionInStack(
-            context=C, modifier=secondMod, position=len(obj.modifiers)-1)
-        lastPosPositive = modifiers.getModifierPositionInStack(
-            context=C, modifier=secondMod)
-        modifiers.moveModiferToPositionInStack(
-            context=C, modifier=thirdMod, position=-1)
-        lastPosNegative = modifiers.getModifierPositionInStack(
-            context=C, modifier=thirdMod)
-        if lastPosNegative != lastPosPositive or lastPosNegative != len(obj.modifiers)-1:
+        second_mod = positions[1]
+        third_mod = positions[2]
+        modifiers.move_modifer_to_position_in_stack(
+            context=C, modifier=second_mod, position=len(obj.modifiers) - 1)
+        last_pos_positive = modifiers.get_modifier_position_in_stack(
+            context=C, modifier=second_mod)
+        modifiers.move_modifer_to_position_in_stack(
+            context=C, modifier=third_mod, position=-1)
+        last_pos_negative = modifiers.get_modifier_position_in_stack(
+            context=C, modifier=third_mod)
+        if last_pos_negative != last_pos_positive or last_pos_negative != len(obj.modifiers) - 1:
             return False
 
         # testing the tryToBind() function
 
-        def objectInCurrentScene(obj):
+        def object_in_current_scene(obj):
             C.window.scene = obj.users_scene[0]
 
-        def objectInOtherScene(obj):
-            newScene = bpy.data.scenes.new("59123519")
-            C.window.scene = newScene
+        def object_in_other_scene(obj):
+            new_scene = bpy.data.scenes.new("59123519")
+            C.window.scene = new_scene
             if C.scene in list(obj.users_scene):
                 raise Exception("Scene context setting failed, aborting test")
 
-        def objectInNoScene(obj):
+        def object_in_no_scene(obj):
             for coll in tuple(obj.users_collection):
                 coll.objects.unlink(obj)
             if len(obj.users_scene) != 0:
                 raise Exception("Scene context setting failed, aborting test")
 
-        def testSurfaceDeform(obj):
+        def test_surface_deform(obj):
             smod = obj.modifiers.new(
                 name='surfaceDeformMod', type='SURFACE_DEFORM')
-            emptyObj = testHelpers.createSubdivObj(0, "CUBE")
-            emptyObj.data.clear_geometry()
-            fullObj = testHelpers.createSubdivObj(0, "CUBE")
-            testHelpers.messAround(False)
+            empty_obj = test_helpers.create_subdiv_obj(0, "CUBE")
+            empty_obj.data.clear_geometry()
+            full_obj = test_helpers.create_subdiv_obj(0, "CUBE")
+            test_helpers.mess_around(False)
 
-            smod.target = emptyObj
-            if modifiers.tryToBind(context=C, modifier=smod) == True:
+            smod.target = empty_obj
+            if modifiers.try_to_bind(context=C, modifier=smod) == True:
                 return False  # target without geometry cannot be bound
 
-            smod.target = fullObj
-            if modifiers.tryToBind(context=C, modifier=smod) == False:
+            smod.target = full_obj
+            if modifiers.try_to_bind(context=C, modifier=smod) == False:
                 return False  # binding should be possible and thus successful
-            if modifiers.tryToBind(context=C, modifier=smod) == True:
+            if modifiers.try_to_bind(context=C, modifier=smod) == True:
                 return False  # unbinding, so no bind should be detected
 
             smod.target = None
-            if modifiers.tryToBind(context=C, modifier=smod) == True:
+            if modifiers.try_to_bind(context=C, modifier=smod) == True:
                 return False  # no target obj is set and binding shouldn't be possible
 
-            smod.target = fullObj
-            if modifiers.tryToBind(context=C, modifier=smod) == False:
+            smod.target = full_obj
+            if modifiers.try_to_bind(context=C, modifier=smod) == False:
                 return False  # binding should be possible and thus successful
 
             return True
 
-        def testLaplacianDeform(obj):
+        def test_laplacian_deform(obj):
             """
             Note on the Laplacian Deform modifier:
             Even without any coding it behaves weird (Blender 3.0)
@@ -1405,26 +1420,26 @@ def run(context=None):
             simulateneously, showing an error message that the vertex group is invalid.
             """
 
-            ldMod = obj.modifiers.new(
+            ld_mod = obj.modifiers.new(
                 name='LaplacianDeformMod', type='LAPLACIANDEFORM')
-            testHelpers.messAround(False)
+            test_helpers.mess_around(False)
 
-            if modifiers.tryToBind(context=C, modifier=ldMod) == True:
+            if modifiers.try_to_bind(context=C, modifier=ld_mod) == True:
                 return False  # doesnt work with no vertex group selected
 
-            filledVG = obj.vertex_groups.new(name="filled")
+            filled_vg = obj.vertex_groups.new(name="filled")
             # adds a weight of 0.5 to vertex with index 0
-            filledVG.add([0], 0.5, "ADD")
-            ldMod.vertex_group = filledVG.name
-            if modifiers.tryToBind(context=C, modifier=ldMod) == False:
+            filled_vg.add([0], 0.5, "ADD")
+            ld_mod.vertex_group = filled_vg.name
+            if modifiers.try_to_bind(context=C, modifier=ld_mod) == False:
                 return False  # should work since vertex group has at least one vertex in it
-            if modifiers.tryToBind(context=C, modifier=ldMod) == True:
+            if modifiers.try_to_bind(context=C, modifier=ld_mod) == True:
                 # unbinding, so False is expected as the return value.
                 return False
 
-            obj.vertex_groups.remove(filledVG)
-            emptyVG = obj.vertex_groups.new(name="empty")
-            ldMod.vertex_group = emptyVG.name
+            obj.vertex_groups.remove(filled_vg)
+            empty_vg = obj.vertex_groups.new(name="empty")
+            ld_mod.vertex_group = empty_vg.name
             # if modifiers.tryToBind(context=C, modifier=ldMod) == True:
             # I gave up with this: it shouldn't be possible but because, as I said,
             # the laplacian deform mod can behave very weird, you will be able to bind an empty vertex group here.
@@ -1434,32 +1449,33 @@ def run(context=None):
 
             return True
 
-        def testMeshDeform(obj):
-            mdMod = obj.modifiers.new(name='MeshDeformMod', type='MESH_DEFORM')
-            targetObj = testHelpers.createSubdivObj(0, "PLANE")
-            testHelpers.messAround(False)
+        def test_mesh_deform(obj):
+            md_mod = obj.modifiers.new(
+                name='MeshDeformMod', type='MESH_DEFORM')
+            target_obj = test_helpers.create_subdiv_obj(0, "PLANE")
+            test_helpers.mess_around(False)
 
-            if modifiers.tryToBind(context=C, modifier=mdMod) == True:
+            if modifiers.try_to_bind(context=C, modifier=md_mod) == True:
                 return False  # no target object selected, binding shouldnt be possible
-            mdMod.object = targetObj
+            md_mod.object = target_obj
 
-            if modifiers.tryToBind(context=C, modifier=mdMod) == False:
+            if modifiers.try_to_bind(context=C, modifier=md_mod) == False:
                 return False  # target object selected, binding should be possible
-            if modifiers.tryToBind(context=C, modifier=mdMod) == True:
+            if modifiers.try_to_bind(context=C, modifier=md_mod) == True:
                 # unbinding, so False should be returned by the function.
                 return False
 
             return True
 
-        for testSomeMod in (testSurfaceDeform, testLaplacianDeform, testMeshDeform):
+        for test_some_mod in (test_surface_deform, test_laplacian_deform, test_mesh_deform):
             # testing all operator binds in different scene-context
-            for setSceneContext in (objectInCurrentScene, objectInOtherScene, objectInNoScene):
-                plane = testHelpers.createSubdivObj(0, "PLANE")
-                setSceneContext(plane)
-                testHelpers.messAround(False)
-                if testSomeMod(plane) == False:
-                    print(testSomeMod.__name__)
-                    print(setSceneContext.__name__)
+            for set_scene_context in (object_in_current_scene, object_in_other_scene, object_in_no_scene):
+                plane = test_helpers.create_subdiv_obj(0, "PLANE")
+                set_scene_context(plane)
+                test_helpers.mess_around(False)
+                if test_some_mod(plane) == False:
+                    print(test_some_mod.__name__)
+                    print(set_scene_context.__name__)
                     return False
                 D.objects.remove(plane)
 
@@ -1467,19 +1483,19 @@ def run(context=None):
 
     x = True
     # fun as in function, not the joy I haven't experienced since my first day at highschool
-    for fun in (test_selectObjects, test_deleteObjectAndMesh, test_tagVertices, test_createCollection, test_createRealMesh,
-                test_delete_VertsFacesEdges, test_coordinateStuff, test_everythingKeyFrames, test_vertexGroups, test_shapekeys,
+    for fun in (test_select_objects, test_delete_object_and_mesh, test_tag_vertices, test_create_collection, test_create_real_mesh,
+                test_delete_verts_faces_edges, test_coordinateStuff, test_everything_key_frames, test_vertex_groups, test_shapekeys,
                 test_modifiers):
         try:
             if fun() == True:
                 None
             else:
                 print("\n\n")
-                print("Test negative in "+fun.__name__+" !")
+                print("Test negative in " + fun.__name__ + " !")
                 x = False
         except Exception as exception:
             print("\n\n")
-            print("Exception occured in "+fun.__name__+" !")
+            print("Exception occured in " + fun.__name__ + " !")
             print(traceback.format_exc())
             # print("message:\n"+str(exception))
             x = False

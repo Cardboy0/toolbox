@@ -4,7 +4,7 @@ import bpy
 # as the name implies, is meant to deal with vertex groups
 
 
-def createVertexGroup(context, obj, vgName="Group"):
+def create_vertex_group(context, obj, vg_name="Group"):
     """Creates and returns a new vertex group for the specified object.
 
     Parameters
@@ -13,7 +13,7 @@ def createVertexGroup(context, obj, vgName="Group"):
         probably bpy.context
     obj : bpy.types.Object
         Which object is supposed to get the new vertex group
-    vgName : str
+    vg_name : str
         Name of the new vertex group, by default "Group"
 
     Returns
@@ -21,30 +21,30 @@ def createVertexGroup(context, obj, vgName="Group"):
     bpy.types.VertexGroup
         The newly created vertex group
     """
-    origActiveVG = obj.vertex_groups.active
+    orig_active_vg = obj.vertex_groups.active
     # creating a new vertex group makes it the "active" one, which I would like to undo
-    newVG = obj.vertex_groups.new(name=vgName)
+    new_vg = obj.vertex_groups.new(name=vg_name)
     # trying to set vertex_groups.active = None crashes Blender completely as of Blender 3.0
     # setting the active_index to -1 works however
-    if origActiveVG != None:
-        obj.vertex_groups.active = origActiveVG
+    if orig_active_vg != None:
+        obj.vertex_groups.active = orig_active_vg
     else:
         obj.vertex_groups.active_index = -1
-    return newVG
+    return new_vg
 
 
-def validateVertIndicesForVG(context, vertexGroupOrMesh, vertIndices, returnType="list"):
+def validate_vert_indices_for_vg(context, vertex_group_or_mesh, vert_indices, return_type="list"):
     """Removes vertex indices from the supplied list that cannot be used for the given mesh / vertex group
 
     Parameters
     ----------
     context : bpy.types.Context
         probably bpy.context
-    vertexGroupOrMesh : bpy.types.VertexGroup or bpy.types.Mesh
+    vertex_group_or_mesh : bpy.types.VertexGroup or bpy.types.Mesh
         The vertex group (or mesh in general) you want your indices validated for.
-    vertIndices : list-like collection of ints
+    vert_indices : list-like collection of ints
         The indices of the vertices you want to be validated.
-    returnType : "list" or "set"
+    return_type : "list" or "set"
         What type you want the returned collection of values to have
 
     Returns
@@ -52,20 +52,20 @@ def validateVertIndicesForVG(context, vertexGroupOrMesh, vertIndices, returnType
     set
         valid Indices
     """
-    if type(vertexGroupOrMesh) == bpy.types.VertexGroup:
+    if type(vertex_group_or_mesh) == bpy.types.VertexGroup:
         # VG.id_data returns the object the vg belongs to
-        mesh = vertexGroupOrMesh.id_data.data
+        mesh = vertex_group_or_mesh.id_data.data
     else:
-        mesh = vertexGroupOrMesh
-    totalVertAmount = len(mesh.vertices)
-    if returnType == "list":
+        mesh = vertex_group_or_mesh
+    total_vert_amount = len(mesh.vertices)
+    if return_type == "list":
         it = list
-    elif returnType == "set":
+    elif return_type == "set":
         it = set
-    return it(filter(lambda index: (index >= 0 and index < totalVertAmount), vertIndices))
+    return it(filter(lambda index: (index >= 0 and index < total_vert_amount), vert_indices))
 
 
-def setVertexGroupValuesUniform(context, vertexGroup, vertexIndices="ALL", value=1):
+def set_vertex_group_values_uniform(context, vertex_group, vertex_indices="ALL", value=1):
     """Sets all weights of the given vertices to the specified value in the vertex group. 
     If vertices aren't yet part of the vertex group, they will get added automatically.
 
@@ -73,25 +73,25 @@ def setVertexGroupValuesUniform(context, vertexGroup, vertexIndices="ALL", value
     ----------
     context : bpy.types.Context
         probably bpy.context
-    vertexGroup : bpy.types.VertexGroup
+    vertex_group : bpy.types.VertexGroup
         In which vertex group you want to set the weights in.
-    vertexIndices : list or similar, containing ints - or "ALL"
+    vertex_indices : list or similar, containing ints - or "ALL"
         The indices of all vertices whose weight you want changed. By default "ALL".
     value : int
         The weight to give every vertex in vertIndices. By default 1
     """
-    if vertexIndices == "ALL":
-        obj = vertexGroup.id_data
-        vertexIndices = range(len(obj.data.vertices))
+    if vertex_indices == "ALL":
+        obj = vertex_group.id_data
+        vertex_indices = range(len(obj.data.vertices))
         # apparently vertexIndices works with range() objects as well
         # we could still cast it into a list with list(range(someNumber)) if it shows to be unstable in the future
-    vertexGroup.add(vertexIndices, value, "REPLACE")
+    vertex_group.add(vertex_indices, value, "REPLACE")
     # some notes:
     # vertices not yet in the VG will automatically get added to the VG with this
     # do not use "ADD" instead of "REPLACE" - "ADD" *adds* the given value to the current value
 
 
-def setVertexGroupValuesSpecific(context, vertexGroup, weightsForVerts):
+def set_vertex_group_values_specific(context, vertex_group, weights_for_verts):
     """Sets weights of the given vertices to different, specified values in the vertex group. 
     If vertices aren't yet part of the vertex group, they will get added automatically.
 
@@ -99,17 +99,17 @@ def setVertexGroupValuesSpecific(context, vertexGroup, weightsForVerts):
     ----------
     context : bpy.types.Context
         probably bpy.context
-    vertexGroup : bpy.types.VertexGroup
+    vertex_group : bpy.types.VertexGroup
         In which vertex group you want to set the weights in.
-    weightsForVerts : dict; {float: multipleInts}
+    weights_for_verts : dict; {float: multipleInts}
         The dictionary uses weights as keys. Vertices that are supposed to get that weight need to be included in the value (of type list or similar - even if only one int is wanted).
     """
-    for weight, vertIndices in weightsForVerts.items():
-        setVertexGroupValuesUniform(
-            context=context, vertexGroup=vertexGroup, vertexIndices=vertIndices, value=weight)
+    for weight, vert_indices in weights_for_verts.items():
+        set_vertex_group_values_uniform(
+            context=context, vertex_group=vertex_group, vertex_indices=vert_indices, value=weight)
 
 
-def removeVertsFromVertexGroup(context, vertexGroup, vertIndices="ALL", validate=False):
+def remove_verts_from_vertex_group(context, vertex_group, vert_indices="ALL", validate=False):
     """Remove the specified vertices from the vertex group.
 
     Vertex Indices must not be invalid, otherwise Blender will crash completely.
@@ -120,9 +120,9 @@ def removeVertsFromVertexGroup(context, vertexGroup, vertIndices="ALL", validate
     ----------
     context : bpy.types.Context
         probably bpy.context
-    vertexGroup : bpy.types.VertexGroup
+    vertex_group : bpy.types.VertexGroup
         In which vertex group you want to set the weights in.
-    vertIndices : list containing ints, or "ALL"
+    vert_indices : list containing ints, or "ALL"
         The indices of the vertices you want to be removed. By default "ALL".
         Sets are not allowed
     validate : bool
@@ -130,25 +130,25 @@ def removeVertsFromVertexGroup(context, vertexGroup, vertIndices="ALL", validate
 
     """
 
-    if vertIndices == "ALL":
-        obj = vertexGroup.id_data
-        vertIndices = range(len(obj.data.vertices))
+    if vert_indices == "ALL":
+        obj = vertex_group.id_data
+        vert_indices = range(len(obj.data.vertices))
 
     if validate == True:
-        vertIndices = validateVertIndicesForVG(
-            context=context, vertexGroupOrMesh=vertexGroup, vertIndices=vertIndices, returnType="list")
+        vert_indices = validate_vert_indices_for_vg(
+            context=context, vertex_group_or_mesh=vertex_group, vert_indices=vert_indices, return_type="list")
 
-    vertexGroup.remove(vertIndices)
+    vertex_group.remove(vert_indices)
 
 
-def getVertsInVertexGroup(context, vertexGroup):
+def get_verts_in_vertex_group(context, vertex_group):
     """Tells you which vertices are currently assigned to the given vertex group.
 
     Parameters
     ----------
     context : bpy.types.Context
         probably bpy.context
-    vertexGroup : bpy.types.VertexGroup
+    vertex_group : bpy.types.VertexGroup
         The vertex group to analyse
 
     Returns
@@ -156,22 +156,22 @@ def getVertsInVertexGroup(context, vertexGroup):
     set
         All indices of vertices that are in the vertex group
     """
-    obj = vertexGroup.id_data
-    foundVerts = set()
-    for vertIndex in range(len(obj.data.vertices)):
+    obj = vertex_group.id_data
+    found_verts = set()
+    for vert_index in range(len(obj.data.vertices)):
         try:
-            vertexGroup.weight(vertIndex)
-            foundVerts.add(vertIndex)
+            vertex_group.weight(vert_index)
+            found_verts.add(vert_index)
             # you might think that this is stupid, and you'd be right
             # but this seems to be the best possible solution
             # Some posts on the internet do this by searching inside someVertex.groups for the vertex group in question
             # That's at least twice as slow as this function, and with each added vertex group it would require more time. So don't do that.
         except:
             pass
-    return foundVerts
+    return found_verts
 
 
-def getVertexWeights(context, vertexGroup, vertexIndices):
+def get_vertex_weights(context, vertex_group, vertex_indices):
     """Returns the weights of given vertices inside a vertex group.
     WARNING: All supplied vertices must exist within the vertex group, otherwise Blender will throw an error.
 
@@ -179,9 +179,9 @@ def getVertexWeights(context, vertexGroup, vertexIndices):
     ----------
     context : bpy.types.Context
         probably bpy.context
-    vertexGroup : bpy.types.VertexGroup
+    vertex_group : bpy.types.VertexGroup
         The vertex group to analyse
-    vertexIndices : List or similar
+    vertex_indices : List or similar
         Contains the vertex indices to check. All indices must be assigned to the vertex group for this to work!
 
     Returns
@@ -189,11 +189,11 @@ def getVertexWeights(context, vertexGroup, vertexIndices):
     list
         Weight of vertex 20 = returnList[20]
     """
-    obj = vertexGroup.id_data
-    totalVerts = len(obj.data.vertices)
-    weights = [None]*totalVerts
-    for i in vertexIndices:
-        weights[i] = vertexGroup.weight(i)
+    obj = vertex_group.id_data
+    total_verts = len(obj.data.vertices)
+    weights = [None] * total_verts
+    for i in vertex_indices:
+        weights[i] = vertex_group.weight(i)
     return weights
 
 

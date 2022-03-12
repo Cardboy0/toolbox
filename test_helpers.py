@@ -4,32 +4,32 @@ import importlib
 import sys
 import pathlib
 
-#enable relative imports in case someone wants to open this file directly:
-if __name__ == '__main__': #makes sure this only happens when you run the script from inside Blender
-    
-    # INCREASE THIS VALUE IF YOU WANT TO ACCESS MODULES IN PARENT FOLDERS (for using something like "from ... import someModule") 
-    number_of_parents = 1 # default = 1
-    
+# enable relative imports in case someone wants to open this file directly:
+if __name__ == '__main__':  # makes sure this only happens when you run the script from inside Blender
+
+    # INCREASE THIS VALUE IF YOU WANT TO ACCESS MODULES IN PARENT FOLDERS (for using something like "from ... import someModule")
+    number_of_parents = 1  # default = 1
+
     original_path = pathlib.Path(bpy.data.filepath)
     parent_path = original_path.parent
-    
+
     for i in range(number_of_parents):
         parent_path = parent_path.parent
-    
-    
-    str_parent_path = str(parent_path.resolve()) # remember, paths only work if they're strings
-    #print(str_parent_path)    
+
+    # remember, paths only work if they're strings
+    str_parent_path = str(parent_path.resolve())
+    # print(str_parent_path)
     if not str_parent_path in sys.path:
         sys.path.append(str_parent_path)
 
     # building the correct __package__ name
     relative_path = original_path.parent.relative_to(parent_path)
     with_dots = '.'.join(relative_path.parts)
-    #print(with_dots)
+    # print(with_dots)
     __package__ = with_dots
 
-from . import (coordinatesStuff, createRealMesh)
-for modu in (createRealMesh, coordinatesStuff):
+from . import (coordinates_stuff, create_real_mesh)
+for modu in (create_real_mesh, coordinates_stuff):
     importlib.reload(modu)
 
 
@@ -51,7 +51,7 @@ for modu in (createRealMesh, coordinatesStuff):
 # That's because this file is only supposed to be used for simple testing, and a few other reasons
 
 
-def createSubdivObj(subdivisions=0, type="PLANE"):
+def create_subdiv_obj(subdivisions=0, type="PLANE"):
     """Creates a primitive mesh object, optionally with subdvisions applied.
 
     Parameters
@@ -66,20 +66,20 @@ def createSubdivObj(subdivisions=0, type="PLANE"):
     bpy.types.Object
         Created object
     """
-    def raiseErr():
-        raise Exception(str(type)+" not a valid value.")
-    possibleOps = {
-        "PLANE":      bpy.ops.mesh.primitive_plane_add,
-        "CUBE":       bpy.ops.mesh.primitive_cube_add,
-        "UV_SPHERE":  bpy.ops.mesh.primitive_uv_sphere_add,
+    def raise_err():
+        raise Exception(str(type) + " not a valid value.")
+    possible_ops = {
+        "PLANE": bpy.ops.mesh.primitive_plane_add,
+        "CUBE": bpy.ops.mesh.primitive_cube_add,
+        "UV_SPHERE": bpy.ops.mesh.primitive_uv_sphere_add,
         "ICO_SPHERE": bpy.ops.mesh.primitive_ico_sphere_add,
-        "CYLINDER":   bpy.ops.mesh.primitive_cylinder_add,
-        "CONE":       bpy.ops.mesh.primitive_cone_add,
-        "TORUS":      bpy.ops.mesh.primitive_torus_add,
-        "MONKEY":     bpy.ops.mesh.primitive_monkey_add,
+        "CYLINDER": bpy.ops.mesh.primitive_cylinder_add,
+        "CONE": bpy.ops.mesh.primitive_cone_add,
+        "TORUS": bpy.ops.mesh.primitive_torus_add,
+        "MONKEY": bpy.ops.mesh.primitive_monkey_add,
 
     }
-    possibleOps.get(type, raiseErr)()
+    possible_ops.get(type, raise_err)()
     obj = bpy.context.object
     #mesh = obj.data
     bpy.ops.object.mode_set(mode='EDIT')
@@ -89,7 +89,7 @@ def createSubdivObj(subdivisions=0, type="PLANE"):
     return obj
 
 
-def messAround(switchScenes=True):
+def mess_around(switch_scenes=True):
     """If you generally just want to f*ck up your project to see if your functions still work when settings change.
     Currently includes:
     - Creating a new object (gets deleted again)
@@ -100,31 +100,31 @@ def messAround(switchScenes=True):
 
     Parameters
     ----------
-    switchScenes : bool
+    switch_scenes : bool
         If True, your active scene will be switched. If no other scenes exist yet, a new one will be created. Note that to change scenes you can use "C.window.scene = yourScene"
     """
     bpy.ops.mesh.primitive_cube_add()
-    newObj = bpy.context.object
-    for selectedObjs in bpy.context.selected_objects.copy():
-        if selectedObjs != newObj:
-            selectedObjs.select_set(False)
-    newObj.select_set(True)
-    bpy.context.view_layer.objects.active = newObj
+    new_obj = bpy.context.object
+    for selected_objs in bpy.context.selected_objects.copy():
+        if selected_objs != new_obj:
+            selected_objs.select_set(False)
+    new_obj.select_set(True)
+    bpy.context.view_layer.objects.active = new_obj
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.context.scene.frame_set(bpy.context.scene.frame_current+8)
-    bpy.context.scene.frame_set(bpy.context.scene.frame_current-4)
+    bpy.context.scene.frame_set(bpy.context.scene.frame_current + 8)
+    bpy.context.scene.frame_set(bpy.context.scene.frame_current - 4)
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.context.view_layer.objects.active = newObj
+    bpy.context.view_layer.objects.active = new_obj
     bpy.ops.object.delete(use_global=False)
     # after deleting no object will be selected or active, so no mode can be set and will give us an error
-    if switchScenes == True:
-        currentScene = bpy.context.scene
+    if switch_scenes == True:
+        current_scene = bpy.context.scene
         if len(bpy.data.scenes) == 1:
             bpy.ops.scene.new(type='NEW')
         for scene in bpy.data.scenes:
-            if scene != currentScene:
+            if scene != current_scene:
                 bpy.context.window.scene = scene
         bpy.ops.mesh.primitive_cube_add()
         bpy.ops.object.delete(use_global=False)
@@ -133,44 +133,44 @@ def messAround(switchScenes=True):
 class Timing:
 
     @staticmethod
-    def printTime(timeToPrint, roundDigits=2, Text=""):
+    def print_time(time_to_print, round_digits=2, text=""):
         """Prints the supplied value as time in seconds to the console.
 
         Parameters
         ----------
-        timeToPrint : float
+        time_to_print : float
             Time in seconds
-        roundDigits : int
+        round_digits : int
             The digit you want the print statement to be rounded to.
             Regardless of choice, it will always include the first digit that isn't zero.
-        Text : str
+        text : str
             Any text you want to have printed at the first, e.g. "my cake required" -> "my cake required: 300.0 seconds"
         """
-        if Text != "":
-            Text += ":\t"
+        if text != "":
+            text += ":\t"
 
         # Get the position of the first digit that isnt 0
-        firstDigitNotZero = 0
-        timeToTest = timeToPrint
-        while int(timeToTest) == 0:
-            firstDigitNotZero += 1
-            timeToTest = timeToTest*10
-        if firstDigitNotZero > roundDigits:
-            roundDigits = firstDigitNotZero
+        first_digit_not_zero = 0
+        time_to_test = time_to_print
+        while int(time_to_test) == 0:
+            first_digit_not_zero += 1
+            time_to_test = time_to_test * 10
+        if first_digit_not_zero > round_digits:
+            round_digits = first_digit_not_zero
 
-        print(Text + str(round(timeToPrint, roundDigits))+" seconds")
+        print(text + str(round(time_to_print, round_digits)) + " seconds")
 
     @classmethod
-    def measureTimeNeededToRun(cls, function, printTime=True, printDigits=2):
+    def measure_time_needed_to_run(cls, function, print_time=True, print_digits=2):
         """Returns the time a function needed to run. Optionally prints the result into the console.
 
         Parameters
         ----------
         function : function
             The function to test. NOTE THAT NO PARAMETERS CAN BE USED, so you might have to create a "temporary" function.
-        printTime : bool
+        print_time : bool
             Whether you want to have the result be printed to the console.
-        printDigits : int
+        print_digits : int
             If printTime==True, decides about the amount of digits that will be printed (e.g. 3 digits -> "functionX needed 0.128 seconds").
             Regardless, it will always include the first digit that isn't zero.
 
@@ -182,13 +182,13 @@ class Timing:
         t = -time.time()
         function()
         t += time.time()
-        if printTime == True:
-            cls.printTime(timeToPrint=t, roundDigits=printDigits,
-                          Text=function.__name__)
+        if print_time == True:
+            cls.print_time(time_to_print=t, round_digits=print_digits,
+                           text=function.__name__)
         return t
 
 
-def areObjsTheSame(context, obj1, obj2, frame="CURRENT", apply_transforms_obj1=True, apply_transforms_obj2=True, mute=True):
+def are_objs_the_same(context, obj1, obj2, frame="CURRENT", apply_transforms_obj1=True, apply_transforms_obj2=True, mute=True):
     """Checks if two objects, after everything (such as modifiers) has been applied, are the same (at a single frame) by comparing each vertex coordinate.
 
     Parameters
@@ -209,32 +209,32 @@ def areObjsTheSame(context, obj1, obj2, frame="CURRENT", apply_transforms_obj1=T
         Dont print an errormessage with some detail when objs are not the same?
     """
 
-    def errorMessage(messageStart="Comparison failed for", messageEnd=""):
+    def error_message(messageStart="Comparison failed for", messageEnd=""):
         if mute == False:
-            print(messageStart+" objects "+obj1.name +
-                  " and "+obj2.name + " " + messageEnd)
+            print(messageStart + " objects " + obj1.name +
+                  " and " + obj2.name + " " + messageEnd)
 
-    obj1MeshCopy = createRealMesh.createRealMeshCopy(
+    obj1_mesh_copy = create_real_mesh.create_real_mesh_copy(
         context=context, obj=obj1, frame=frame, apply_transforms=apply_transforms_obj1)
-    obj2MeshCopy = createRealMesh.createRealMeshCopy(
+    obj2_mesh_copy = create_real_mesh.create_real_mesh_copy(
         context=context, obj=obj2, frame=frame, apply_transforms=apply_transforms_obj2)
-    vertsObj1 = coordinatesStuff.getVertexCoordinates(
-        context=context, mesh=obj1MeshCopy)
-    vertsObj2 = coordinatesStuff.getVertexCoordinates(
-        context=context, mesh=obj2MeshCopy)
+    verts_obj1 = coordinates_stuff.get_vertex_coordinates(
+        context=context, mesh=obj1_mesh_copy)
+    verts_obj2 = coordinates_stuff.get_vertex_coordinates(
+        context=context, mesh=obj2_mesh_copy)
 
     # don't need them anymore for what's left
-    bpy.data.meshes.remove(obj1MeshCopy)
-    bpy.data.meshes.remove(obj2MeshCopy)
+    bpy.data.meshes.remove(obj1_mesh_copy)
+    bpy.data.meshes.remove(obj2_mesh_copy)
 
-    if len(vertsObj1) != len(vertsObj2):
-        errorMessage(messageEnd="(Different amount of vertices)")
+    if len(verts_obj1) != len(verts_obj2):
+        error_message(messageEnd="(Different amount of vertices)")
         return False
-    for vertIndex in range(len(vertsObj1)):
-        v1 = vertsObj1[vertIndex]
-        v2 = vertsObj2[vertIndex]
-        if coordinatesStuff.isVectorClose(context=context, vector1=v1, vector2=v2, ndigits=3) == False:
-            errorMessage(messageEnd="(Different vertices found:\nIndex=" +
-                         str(vertIndex)+"\nvert1 = "+str(v1)+"\nvert2 = "+str(v2))
+    for vertIndex in range(len(verts_obj1)):
+        v1 = verts_obj1[vertIndex]
+        v2 = verts_obj2[vertIndex]
+        if coordinates_stuff.is_vector_close(context=context, vector1=v1, vector2=v2, ndigits=3) == False:
+            error_message(messageEnd="(Different vertices found:\nIndex=" +
+                          str(vertIndex) + "\nvert1 = " + str(v1) + "\nvert2 = " + str(v2))
             return False
     return True

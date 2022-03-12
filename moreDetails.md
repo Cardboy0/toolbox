@@ -7,8 +7,8 @@ The general README is titled [README.md](README.md), read that one first if you 
 When any of the scripts in this repository import another one, you will see that it uses a **relative** import for that.  
 Among other things, this basically means I use dots instead of the parent folder name in imports.  
 So for instance instead of  
-`from toolbox import deleteStuff`, you will see  
-`from . import deleteStuff`  
+`from toolbox import delete_stuff`, you will see  
+`from . import delete_stuff`  
 
 This is **on purpose**, because it allows you to make this folder part of other stuff (like add-ons) without having to change any of the import statements yourself, and everything will (or should) still work.  
 I found that absolute paths give problems in add-ons.

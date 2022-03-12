@@ -34,7 +34,7 @@ https://github.com/Cardboy0/toolbox
 
 
 # testing
-- if you want to "test" the scripts in this repository - a.k.a. check if they work for you as intended - check out the **doesThisStuffWorkForMe** subfolder (there's another *readme* file inside).
+- if you want to "test" the scripts in this repository - a.k.a. check if they work for you as intended - check out the **does_this_stuff_work_for_me** subfolder (there's another *readme* file inside).
 - if you think you can improve a function or class, you can also do the test stuff above to check if your edited code works as intended.
 
 

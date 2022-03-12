@@ -3,8 +3,8 @@ __pycache__
 personal\ notes.md
 
 
-doesThisStuffWorkForMe/*
+does_this_stuff_work_for_me/*
 
-!doesThisStuffWorkForMe/readme.md
-!doesThisStuffWorkForMe/checkFunctionality.py
-!doesThisStuffWorkForMe/checkFunctionality/timeTesting.py
+!does_this_stuff_work_for_me/readme.md
+!does_this_stuff_work_for_me/check_functionality.py
+!does_this_stuff_work_for_me/check_functionality/timeTesting.py
