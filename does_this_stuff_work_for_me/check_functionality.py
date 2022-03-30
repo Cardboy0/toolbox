@@ -21,6 +21,7 @@ def run(context=None):
     else:
         C = context
     D = bpy.data
+    o = bpy.ops  # please don't hurt me for this
 
     def import_stuff():
         # enable relative imports for when this file is opened directly:
@@ -54,16 +55,95 @@ def run(context=None):
 
     import_stuff()
 
-    """# https://blender.stackexchange.com/questions/51044/how-to-import-a-blender-python-script-in-another
-    # importing other python scripts from inside your main script in Blender can be a hassle, so we use the - in my opinion - easiest method:
-    # 1. Open all the scripts (main one and the ones to be imported) in the Blender Text Editor
-    # 2. instead of writing "import yourScript", write yourScript = bpy.data.texts["yourScript.py"].as_module()
-    # 3. It now works as if it had been imported"""
-
     C.scene.frame_set(100)
     bpy.ops.mesh.primitive_cube_add()
     cube = C.object
     print("\n\n" * 3 + "*" * 200 + "\nStart of new test run\n\n")
+
+    ##########################################
+    ###############Some Classes###############
+    ##########################################
+
+    class AllObjectTypes():
+
+        # Warning: these dictionaries do not contain the object type "Collection Instance"
+
+        locations = {
+            "Mesh": D.meshes,
+            "Armature": D.armatures,
+            "Camera": D.cameras,
+            "Curve": D.curves,
+            "GreasePencil": D.grease_pencils,
+            "Image": D.images,
+            "Lattice": D.lattices,
+            "Light": D.lights,
+            "LightProbe": D.lightprobes,
+            "MetaBall": D.metaballs,
+            "Speaker": D.speakers,
+            "Volume": D.volumes,
+            "Empty": None  # an "Empty" object has no data, so there also exists no location
+        }
+
+        create_functions = {
+            "Mesh": [o.mesh.primitive_cone_add],
+            "Armature": [o.object.armature_add],
+            "Camera": [o.object.camera_add],
+            "Curve": [
+                # different subtypes of curve
+                o.curve.primitive_bezier_curve_add,
+                o.surface.primitive_nurbs_surface_torus_add,
+                o.object.text_add,
+            ],
+            "GreasePencil": [o.object.gpencil_add],
+            # lambda because otherwise we can't use own class name within an attribute
+            "Image": [lambda: AllObjectTypes.create_image()],
+            "Lattice": [lambda: o.object.add(type='LATTICE')],
+            "Light": [
+                # these have different subtypes of light
+                lambda: o.object.light_add(type='POINT'),
+                lambda: o.object.light_add(type='SUN'),
+                lambda: o.object.light_add(type='SPOT'),
+                lambda: o.object.light_add(type='AREA'),
+            ],
+            "LightProbe": [o.object.lightprobe_add],
+            "MetaBall": [o.object.metaball_add],
+            "Speaker": [o.object.speaker_add],
+            "Volume": [o.object.volume_add],
+            "Empty": [
+                o.object.empty_add,
+                lambda: o.object.effector_add(type='WIND')]
+        }
+
+        @classmethod
+        def get_all_keys(clss) -> set:
+            first_key_set = set(clss.locations.keys())
+            second_key_set = set(clss.create_functions.keys())
+            if first_key_set != second_key_set:
+                raise Exception("We have wrong attributes!")
+            return first_key_set
+
+        @classmethod
+        def get_all_creation_functions(clss):
+            all_functions = list(clss.create_functions.values())
+            # that's gonna be a multidimensional list, like so: [ [x,y],  [1,2,3,4], ]
+            # convert it to one dimensional:
+            # weird, but it seems to work. Got it from here: https://stackoverflow.com/questions/2961983/convert-multi-dimensional-list-to-a-1d-list-in-python
+            one_dimensional = sum(all_functions, [])
+            # counted them myself to make sure that this one-dimensional stuff is actually working correctly
+            if len(one_dimensional) < 19 or len(one_dimensional) > 50:
+                raise Exception("Bad value")
+            return one_dimensional
+
+        @classmethod
+        def create_image(clss):
+            # Image creation requires us to first create a new image and then assign that to an empty object
+            # We can't use bpy.ops.object.load_reference_image(), because that requires us to choose an image file from our drive
+            simple_image = D.images.new(
+                name="testImage292318", width=10, height=10)
+            # right now has no data (None)
+            bpy.ops.object.empty_add(type='IMAGE')
+            image_obj = C.object
+            image_obj.data = simple_image
 
     def test_select_objects():
         try:
@@ -105,11 +185,146 @@ def run(context=None):
                 print(4)
                 return False
 
+        ###############################
+        # testing duplication function#
+        ###############################
+        # Things tested:
+        # different types (mesh, camera, empty, etc.)?
+        # same location, rotation, scale?
+        # same scenes/collections?
+        # same constrainst?
+        # same mods?
+        # same parents?
+        # TODO: (maybe) (remember to change function description for what it was tested for)
+        # materials
+        # vertex groups
+        # ?
+
+        def test_transforms(obj_orig, obj_dupl):
+            # checks all three transform types for same values
+            for type in ("location", "rotation_euler", "scale"):
+                for index in (0, 1, 2):
+                    val_orig = getattr(obj_orig, type)[index]
+                    val_dupl = getattr(obj_dupl, type)[index]
+                    difference = round(val_orig - val_dupl, 4)
+                    if difference != 0:
+                        print("Different values for " + type + " index " +
+                              str(index) + " : " + str(val_orig) + " vs " + str(val_dupl))
+                        return False
+            return True
+
+        def test_users_collection(obj_orig, obj_dupl):
+            if set(obj_orig.users_collection) != set(obj_dupl.users_collection):
+                return False
+            return True
+
+        def test_mods_and_constraints(obj_orig, obj_dupl):
+            # speakers,metaballs, cameras and some other objects have a modifiers attribute but adding stuff does nothing, so it's always empty
+            if hasattr(obj_orig, "modifiers") == True:
+                if len(obj_orig.modifiers) != len(obj_dupl.modifiers):
+                    print("Different amount of modifiers")
+                    print(len(obj_orig.modifiers))
+                    print(type(obj_orig.data))
+                    return False
+                for mod in obj_orig.modifiers:
+                    if obj_dupl.modifiers.find(mod.name) == -1:
+                        print("Different modifier names!")
+                        return False
+            if hasattr(obj_orig, "constraints") == True:
+                if len(obj_orig.constraints) != len(obj_dupl.constraints) or len(obj_orig.constraints) == 0:
+                    print("Different amount of constraints")
+                    print(len(obj_orig.constraints))
+                    print(len(obj_dupl.constraints))
+                    print(type(obj_orig.data))
+                    return False
+                for constraint in obj_orig.constraints:
+                    if obj_dupl.constraints.find(constraint.name) == -1:
+                        print("Different constraint names!")
+                        return False
+            return True
+
+        loc = [1, 2, 3]
+        rot = [4, 5, 6]
+        scale = [7, 8, 9]
+        orig_scene = bpy.context.scene
+        mods = ['WAVE', 'SMOOTH', 'SUBSURF']
+        cons = ['COPY_ROTATION', 'STRETCH_TO', 'TRANSFORM']
+        general_parent = test_helpers.create_subdiv_obj(
+            subdivisions=0, type="PLANE")
+
+        for change_scenes in (False, True):
+            for object_type in AllObjectTypes.get_all_keys():
+                data_collection = AllObjectTypes.locations[object_type]
+                creation_functions = AllObjectTypes.create_functions[object_type]
+                for fun in creation_functions:
+                    C.window.scene = orig_scene
+                    current_objs = list(D.objects)
+                    if object_type != "Empty":
+                        current_datas = list(data_collection)
+                    fun()
+                    obj_orig = C.object
+                    if obj_orig in current_objs:
+                        print("Didn't get the correct object, sorry.")
+                        return False
+                    obj_orig.location = loc.copy()
+                    obj_orig.rotation_euler = rot.copy()
+                    obj_orig.scale = scale.copy()
+                    obj_orig.parent = general_parent
+                    if hasattr(obj_orig, "modifiers") == True:
+                        for modname in mods:
+                            obj_orig.modifiers.new(name=modname, type=modname)
+                    if hasattr(obj_orig, "constraints") == True:
+                        for constraintname in cons:
+                            obj_orig.constraints.new(constraintname)
+
+                    test_helpers.mess_around(switch_scenes=change_scenes)
+
+                    # with original object data
+                    obj_copy = select_objects.duplicate_object(
+                        context=C, obj=obj_orig, keep_mesh=True)
+                    if obj_copy == obj_orig or obj_copy is obj_orig:
+                        return False
+                    if test_transforms(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
+                        return False
+                    if test_mods_and_constraints(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
+                        return False
+                    if test_users_collection(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
+                        return False
+                    if obj_orig.parent != obj_copy.parent:
+                        return False
+                    if object_type != "Empty":
+                        if obj_orig.data != obj_copy.data or (obj_orig.data is obj_copy.data) == False:
+                            print("Empty problem")
+                            return False
+
+                    test_helpers.mess_around(
+                        switch_scenes=change_scenes, scenes_to_avoid=[orig_scene])
+
+                    # with duplicate object data
+                    obj_copy = select_objects.duplicate_object(
+                        context=C, obj=obj_orig, keep_mesh=False)
+                    if obj_copy == obj_orig or obj_copy is obj_orig:
+                        return False
+                    if test_transforms(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
+                        return False
+                    if test_mods_and_constraints(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
+                        return False
+                    if test_users_collection(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
+                        return False
+                    if obj_orig.parent != obj_copy.parent:
+                        return False
+                    if object_type != "Empty":
+                        if obj_orig.data == obj_copy.data or obj_orig.data is obj_copy.data:
+                            return False
+                        if type(obj_orig.data) != type(obj_copy.data):
+                            return False
+
         return True
 
     # deleteStuff.py
 
     def test_delete_object_and_mesh():
+        # TODO: use newly created class instead of the dictionaries below
         try:
             from .. import delete_stuff
             importlib.reload(delete_stuff)
@@ -1154,6 +1369,266 @@ def run(context=None):
         for vert_index in vg3_verts:
             if round(vg3_weights[vert_index], 3) != unchaged_uniform_value:
                 return False
+
+        """Check the VGroupsWithModifiers class that does stuff with modifers"""
+        from .. import create_real_mesh
+
+        def has_0_weight_assignments(obj, vg_name):
+            vg_exists(obj=obj, vg_name=vg_name)
+            # this method is based on the fact that the mask modifier will affect any vertex with a weight that's not exactly zero
+            # Using a vertex weight mix modifier, we will be able to increase the weight of *all* vertices that are assigned to that vertex group, including those with a weight of exactly 0
+            # Only vertices that aren't assigned will be untouched
+            # After increasing, we can try the mask modifier again and see if more gets masked now, which means there were assigned vertices with a weight of 0 originally somewhere
+            mod_mask = obj.modifiers.new(name="Mask modifier", type="MASK")
+            mod_mask.vertex_group = vg_name
+            mod_mask.invert_vertex_group = True
+            orig_shape = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, apply_transforms=False)
+            obj.modifiers.remove(mod_mask)
+            mod_vw_mix = obj.modifiers.new(
+                name='Check for zero weight vertices', type="VERTEX_WEIGHT_MIX")
+            mod_vw_mix.vertex_group_a = vg_name
+            mod_vw_mix.default_weight_b = 0.5
+            mod_vw_mix.mix_set = 'A'  # only affect vertices in vertex group a
+            mod_vw_mix.mix_mode = 'SET'  # is displayed as 'Replace'
+
+            mod_mask = obj.modifiers.new(name="Mask modifier", type="MASK")
+            mod_mask.vertex_group = vg_name
+            mod_mask.invert_vertex_group = True
+            new_shape = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, apply_transforms=False)
+            obj.modifiers.remove(mod_mask)
+            obj.modifiers.remove(mod_vw_mix)
+            are_the_same = (len(orig_shape.vertices)
+                            == len(new_shape.vertices))
+            return are_the_same == False
+
+        def has_any_weights_over_zero_at_all(obj, vg_name):
+            # a mask modifier only affects assigned vertices with a weight bigger (but not equal to) than 0
+            vg_exists(obj=obj, vg_name=vg_name)
+            orig_mesh = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, apply_transforms=False)
+            mod_mask = obj.modifiers.new(name="Mask modifier", type="MASK")
+            mod_mask.vertex_group = vg_name
+            mod_mask.invert_vertex_group = True
+            new_mesh = create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, apply_transforms=False)
+            obj.modifiers.remove(mod_mask)
+            are_the_same = len(orig_mesh.vertices) == len(new_mesh.vertices)
+            return are_the_same == False
+
+        def have_the_same_weights(obj1, obj2, vg1_name, vg2_name):
+            # use a displace modifier to have an easy way to translate weights to changes in geometry
+            vg_exists(obj=obj1, vg_name=vg1_name)
+            vg_exists(obj=obj2, vg_name=vg2_name)
+            if has_any_weights_over_zero_at_all(obj=obj1, vg_name=vg1_name) == False:
+                print(have_the_same_weights.__name__ + ": " +
+                      vg1_name + " has no weights over 0")
+                return False
+            if test_helpers.are_objs_the_same(context=C, obj1=obj1, obj2=obj2, apply_transforms_obj1=False, apply_transforms_obj2=False, mute=False) == False:
+                print(have_the_same_weights.__name__ + ".line alpha")
+                return False
+            mod_displace1 = obj1.modifiers.new(
+                name="displace test", type="DISPLACE")
+            mod_displace1.vertex_group = vg1_name
+
+            mod_displace2 = obj2.modifiers.new(
+                name="displace test 2", type="DISPLACE")
+            mod_displace2.vertex_group = vg2_name
+            are_the_same = test_helpers.are_objs_the_same(
+                context=C, obj1=obj1, obj2=obj2, apply_transforms_obj1=False, apply_transforms_obj2=False, mute=False)
+            obj1.modifiers.remove(mod_displace1)
+            obj2.modifiers.remove(mod_displace2)
+            return are_the_same
+
+        def vg_exists(obj, vg_name):
+            # just raises an Exception if a vertex group doesn't even exist
+            if obj.vertex_groups.find(vg_name) == -1:
+                raise Exception(
+                    "Couldnt find any vertex group with that name!")
+
+        original_scene = C.scene
+
+        def create_monkey():
+            current_scene = C.scene
+            # always create the new monkey in the original scene so all monkeys are in there.
+            C.window.scene = original_scene
+            # monkey because we use topology for datatransfer
+            monky = test_helpers.create_subdiv_obj(
+                subdivisions=0, type="MONKEY")
+            C.window.scene = current_scene
+            return monky
+
+        # basic_monkey will used for comparisons
+        basic_monkey = create_monkey()
+        # different location than new monkeys.
+        basic_monkey.location = [5, 8, 1]
+
+        # following are different tests in functions
+
+        def test_uniform_weight_setting():
+            # test if the class method is able to change any set of weights (0, smaller, 1) to the chosen value
+            vg_all_0_5 = vertex_groups.create_vertex_group(
+                context=C, obj=basic_monkey, vg_name="ALL VERTICES 0.5")
+            vertex_groups.set_vertex_group_values_uniform(
+                context=C, vertex_group=vg_all_0_5, vertex_indices="ALL", value=0.5)
+            vg_some_0_5 = vertex_groups.create_vertex_group(
+                context=C, obj=basic_monkey, vg_name="SOME VERTICES 0.5")
+            vertex_groups.set_vertex_group_values_uniform(
+                context=C, vertex_group=vg_some_0_5, vertex_indices=[1, 7, 23, 83], value=0.5)
+            for weight in (0, 0.2, 1):
+                new_monkey = create_monkey()
+                test_helpers.mess_around(switch_scenes=False)
+                vg_some_values = vertex_groups.create_vertex_group(
+                    context=C, obj=new_monkey, vg_name="SOME VERTICES " + str(weight))
+                vertex_groups.set_vertex_group_values_uniform(
+                    context=C, vertex_group=vg_some_values, vertex_indices=[1, 7, 23, 83], value=weight)
+
+                # test with only_assigned = False
+                mod_uniform = vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(
+                    context=C, obj=new_monkey, vg_name=vg_some_values.name, only_assigned=False, weight=0.5)
+                if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_all_0_5.name, vg2_name=vg_some_values.name) == False:
+                    print(
+                        "Testing vg_uniform failed. Current weight that was tested: " + str(weight))
+                    print("Object doesn't have the excepted weights.")
+                    print("Alpha")
+                    return False
+                if has_0_weight_assignments(obj=new_monkey, vg_name=vg_some_values.name) == True:
+                    print(
+                        "Testing vg_uniform failed. Current weight that was tested: " + str(weight))
+                    print("Object has weights with 0 weights")
+                    print("Alpha")
+                    return False
+
+                new_monkey.modifiers.remove(mod_uniform)
+
+                # test with only_assigned = True
+                mod_uniform = vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(
+                    context=C, obj=new_monkey, vg_name=vg_some_values.name, only_assigned=True, weight=0.5)
+                if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_some_0_5.name, vg2_name=vg_some_values.name) == False:
+                    print(
+                        "Testing vg_uniform failed. Current weight that was tested: " + str(weight))
+                    print("Object doesn't have the excepted weights.")
+                    print("Beta")
+                    return False
+                if has_0_weight_assignments(obj=new_monkey, vg_name=vg_some_values.name) == True:
+                    print(
+                        "Testing vg_uniform failed. Current weight that was tested: " + str(weight))
+                    print("Object has weights with 0 weights")
+                    print("Beta")
+                    return False
+                bpy.data.objects.remove(new_monkey)
+            return True
+
+        def test_vg_duplication():
+            # test if the class method is able to properly duplicate a vertex group.
+            # this must include that unassigned vertices do not get assigned with a weight of 0, which can sometimes happen with modifiers.
+            new_monkey = create_monkey()
+            test_helpers.mess_around(switch_scenes=False)
+            some_weights = {0.2: [1, 5, 8], 0.8: [7, 2, 11], 1: [20]}
+
+            vg_specific = vertex_groups.create_vertex_group(
+                context=C, obj=basic_monkey, vg_name="Specific vg")
+            vertex_groups.set_vertex_group_values_specific(
+                context=C, vertex_group=vg_specific, weights_for_verts=some_weights)
+
+            vg_specific_new_monkey = vertex_groups.create_vertex_group(
+                context=C, obj=new_monkey, vg_name="Specific vg")
+            vertex_groups.set_vertex_group_values_specific(
+                context=C, vertex_group=vg_specific_new_monkey, weights_for_verts=some_weights)
+
+            dict_copy = vertex_groups.VGroupsWithModifiers.mimic_vertex_group(
+                context=C, obj=new_monkey, vg_to_duplicate=vg_specific_new_monkey.name)
+            vg_copy = dict_copy["new vg"]
+            new_mod = dict_copy["mod"]
+
+            C.window.scene = original_scene
+            if vg_copy.name == vg_specific_new_monkey.name:
+                print("Search for line '61235'")
+                return False
+
+            if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_specific.name, vg2_name=vg_copy.name) == False:
+                print("Search for line '61236'")
+                return False
+
+            if has_0_weight_assignments(obj=new_monkey, vg_name=vg_copy.name) == True:
+                print("Search for line '61237'")
+                return False
+
+            bpy.data.objects.remove(new_monkey)
+
+            return True
+
+        def test_mimic_vg_of_external_objects():
+            # test if the class method is able to mimic a vertex group of another object
+            new_monkey = create_monkey()
+            test_helpers.mess_around(switch_scenes=False)
+            other_weights = {0.3: [6, 1], 0.9: [7, 0], 1: [11, 12, 23]}
+
+            vg_specific = vertex_groups.create_vertex_group(
+                context=C, obj=basic_monkey, vg_name="Specific vg another")
+            vertex_groups.set_vertex_group_values_specific(
+                context=C, vertex_group=vg_specific, weights_for_verts=other_weights)
+
+            new_mod = vertex_groups.VGroupsWithModifiers.mimic_external_vertex_group(
+                context=C, main_obj=new_monkey, target_obj=basic_monkey, vg_of_target=vg_specific.name)
+
+            C.window.scene = original_scene
+            if have_the_same_weights(obj1=new_monkey, obj2=basic_monkey, vg1_name=vg_specific.name, vg2_name=vg_specific.name) == False:
+                print("Search for word '61241'")
+            if has_0_weight_assignments(obj=new_monkey, vg_name=vg_specific.name) == True:
+                print("Search for word '612342'")
+                return False
+
+            bpy.data.objects.remove(new_monkey)
+
+            return True
+
+        def test_removing_zero_weights():
+            # test the class method that's supposed to unassign 0 weight vertices.
+            have_zero_weights = [7, 1, 9]
+            weight_dict_old = {0.0000001: [10, 61, 23, 5], 1: [50, 51, 52]}
+            weight_dict_new = {0.0000001: [10, 61, 23, 5], 1: [
+                50, 51, 52], 0: have_zero_weights}
+            new_monkey = create_monkey()
+            test_helpers.mess_around(switch_scenes=False)
+            vg_specific = vertex_groups.create_vertex_group(
+                context=C, obj=basic_monkey, vg_name="Specific vg")
+            vertex_groups.set_vertex_group_values_specific(
+                context=C, vertex_group=vg_specific, weights_for_verts=weight_dict_old)
+
+            vg_specific_new = vertex_groups.create_vertex_group(
+                context=C, obj=new_monkey, vg_name="Specific vg antother")
+            vertex_groups.set_vertex_group_values_specific(
+                context=C, vertex_group=vg_specific_new, weights_for_verts=weight_dict_new)
+
+            mod = vertex_groups.VGroupsWithModifiers.remove_0_weights(
+                context=C, obj=new_monkey, vg_name=vg_specific_new.name)
+            if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_specific.name, vg2_name=vg_specific_new.name) == False:
+                print("Failed to remove 0 weight vertices")
+                return False
+
+            if has_0_weight_assignments(obj=basic_monkey, vg_name=vg_specific.name):
+                print("Comparison object should not have 0 weights")
+                return False
+            if has_0_weight_assignments(obj=new_monkey, vg_name=vg_specific_new.name):
+                print("Object should not have 0 weights anymore at this point.")
+                return False
+
+            bpy.data.objects.remove(new_monkey)
+            return True
+
+        ######
+        # run all test functions
+        ######
+        for fun in (test_uniform_weight_setting, test_vg_duplication, test_mimic_vg_of_external_objects, test_removing_zero_weights):
+            result = fun()
+            if result == False or result != True:
+                return False
+
+        ############
+        ###finish###
+        ############
         return True
 
     def test_shapekeys():

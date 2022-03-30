@@ -28,10 +28,10 @@ if __name__ == '__main__':  # makes sure this only happens when you run the scri
     # print(with_dots)
     __package__ = with_dots
 
-from . import (coordinates_stuff, create_real_mesh)
-for modu in (create_real_mesh, coordinates_stuff):
+from . import (coordinates_stuff as __coordinates_stuff,
+               create_real_mesh as __create_real_mesh)
+for modu in (__create_real_mesh, __coordinates_stuff):
     importlib.reload(modu)
-
 
 #########################################################################################
 ###############                                                  ########################
@@ -89,7 +89,7 @@ def create_subdiv_obj(subdivisions=0, type="PLANE"):
     return obj
 
 
-def mess_around(switch_scenes=True):
+def mess_around(switch_scenes=True, scenes_to_avoid=[]):
     """If you generally just want to f*ck up your project to see if your functions still work when settings change.
     Currently includes:
     - Creating a new object (gets deleted again)
@@ -102,6 +102,9 @@ def mess_around(switch_scenes=True):
     ----------
     switch_scenes : bool
         If True, your active scene will be switched. If no other scenes exist yet, a new one will be created. Note that to change scenes you can use "C.window.scene = yourScene"
+    scenes_to_avoid : bpy.types.Scene or list of scenes
+        Only matters is switch_scenes is set to True. These scenes will not be switched too. Always includes the current scene.
+
     """
     bpy.ops.mesh.primitive_cube_add()
     new_obj = bpy.context.object
@@ -120,12 +123,22 @@ def mess_around(switch_scenes=True):
     bpy.ops.object.delete(use_global=False)
     # after deleting no object will be selected or active, so no mode can be set and will give us an error
     if switch_scenes == True:
+        if type(scenes_to_avoid) != list:
+            scenes_to_avoid = [scenes_to_avoid]
         current_scene = bpy.context.scene
-        if len(bpy.data.scenes) == 1:
+        scenes_to_avoid += [current_scene]
+        scenes_to_avoid = set(scenes_to_avoid)  # removing duplicate scenes
+        if len(bpy.data.scenes) == 1 or len(bpy.data.scenes) <= len(scenes_to_avoid):
             bpy.ops.scene.new(type='NEW')
+        created = False
         for scene in bpy.data.scenes:
-            if scene != current_scene:
+            if (scene in scenes_to_avoid) == False:
                 bpy.context.window.scene = scene
+                created = True
+                break
+        if created == False:
+            raise Exception(
+                "Something went wrong when trying to change scenes.")
         bpy.ops.mesh.primitive_cube_add()
         bpy.ops.object.delete(use_global=False)
 
@@ -214,13 +227,13 @@ def are_objs_the_same(context, obj1, obj2, frame="CURRENT", apply_transforms_obj
             print(messageStart + " objects " + obj1.name +
                   " and " + obj2.name + " " + messageEnd)
 
-    obj1_mesh_copy = create_real_mesh.create_real_mesh_copy(
+    obj1_mesh_copy = __create_real_mesh.create_real_mesh_copy(
         context=context, obj=obj1, frame=frame, apply_transforms=apply_transforms_obj1)
-    obj2_mesh_copy = create_real_mesh.create_real_mesh_copy(
+    obj2_mesh_copy = __create_real_mesh.create_real_mesh_copy(
         context=context, obj=obj2, frame=frame, apply_transforms=apply_transforms_obj2)
-    verts_obj1 = coordinates_stuff.get_vertex_coordinates(
+    verts_obj1 = __coordinates_stuff.get_vertex_coordinates(
         context=context, mesh=obj1_mesh_copy)
-    verts_obj2 = coordinates_stuff.get_vertex_coordinates(
+    verts_obj2 = __coordinates_stuff.get_vertex_coordinates(
         context=context, mesh=obj2_mesh_copy)
 
     # don't need them anymore for what's left
@@ -233,7 +246,7 @@ def are_objs_the_same(context, obj1, obj2, frame="CURRENT", apply_transforms_obj
     for vertIndex in range(len(verts_obj1)):
         v1 = verts_obj1[vertIndex]
         v2 = verts_obj2[vertIndex]
-        if coordinates_stuff.is_vector_close(context=context, vector1=v1, vector2=v2, ndigits=3) == False:
+        if __coordinates_stuff.is_vector_close(context=context, vector1=v1, vector2=v2, ndigits=3) == False:
             error_message(messageEnd="(Different vertices found:\nIndex=" +
                           str(vertIndex) + "\nvert1 = " + str(v1) + "\nvert2 = " + str(v2))
             return False

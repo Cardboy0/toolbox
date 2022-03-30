@@ -1,6 +1,10 @@
+<!-- This is a markdown file. If you can see this comment, it means that you're currently viewing the file in the wrong way. 
+Visit https://markdownlivepreview.com/ and copy-paste the text in there to have it shown properly, with headings and such.-->
+
 # toolbox
 A collection of Blender Python functions and classes for frequent tasks a hobby developer might encounter, currently including
 - **selecting objects**
+- **duplicating objects**
 - **deleting objects**
 - **dealing with Collections**
 - **tagging Vertices** (a.k.a. being able to track them even after their indices changed)
