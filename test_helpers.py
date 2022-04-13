@@ -29,8 +29,9 @@ if __name__ == '__main__':  # makes sure this only happens when you run the scri
     __package__ = with_dots
 
 from . import (coordinates_stuff as __coordinates_stuff,
-               create_real_mesh as __create_real_mesh)
-for modu in (__create_real_mesh, __coordinates_stuff):
+               create_real_mesh as __create_real_mesh,
+               select_objects as _select_objects)
+for modu in (__create_real_mesh, __coordinates_stuff, _select_objects):
     importlib.reload(modu)
 
 #########################################################################################
@@ -88,6 +89,57 @@ def create_subdiv_obj(subdivisions=0, type="PLANE"):
     bpy.ops.object.mode_set(mode='OBJECT')
     return obj
 
+
+class ArmatureCreator():
+    obj_armature: bpy.types.Object
+    obj_monkey: bpy.types.Object
+    bone_1: bpy.types.Bone
+    bone_2: bpy.types.Bone
+    bone_3: bpy.types.Bone
+
+
+    def __init__(self) -> None:
+        """Creates a simple armature object with three bones total.
+        The bones are not connected, but they all influence the new monkey
+        """
+        # https://blender.stackexchange.com/questions/51684/python-create-custom-armature-without-ops
+        def create_bone(armature, factor):
+            bpy.ops.object.mode_set(mode='EDIT')
+            bone = armature.edit_bones.new(name="bone")  # edit_bones only works in edit mode
+            #bad stuff happens when you try to use that variable after switching back to object mode
+            name = bone.name
+            bone.head = (1, factor * 1, factor * 1)
+            bone.tail = (factor * 2, factor * 2, factor * 2) 
+            bpy.ops.object.mode_set(mode='OBJECT')
+            return armature.bones.get(name)
+        bpy.ops.mesh.primitive_monkey_add()
+        monkey = bpy.context.object
+        monkey.scale.z = 3
+        bpy.ops.object.armature_add()
+        obj_armature = bpy.context.object
+        self.bone_1 = obj_armature.data.bones[0]  # one already exists by default
+        self.bone_2 = create_bone(armature=obj_armature.data, factor=1)
+        self.bone_3 = create_bone(armature=obj_armature.data, factor=-1)
+        _select_objects.select_objects(context=bpy.context, object_list=[monkey, obj_armature], deselect_others=True, active=obj_armature)
+        bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+        self.obj_monkey = monkey
+        self.obj_armature = obj_armature
+
+
+    def move_bones(self):
+        """Moves and rotates the bones to do what armatures usually do.
+        """
+        posebones = self.obj_armature.pose.bones
+        # bpy.ops.object.mode_set(mode='EDIT')
+        for bone in [self.bone_1, self.bone_2, self.bone_3]:
+            posebones[bone.name].rotation_mode = "XYZ" # for some reason that was quaternion by default for me
+        posebones[self.bone_1.name].location = (-1,-0.5,0)
+        posebones[self.bone_1.name].rotation_euler = (0.5,0.3,0.2)
+        posebones[self.bone_2.name].location = (1.2,0.9,10)
+        posebones[self.bone_2.name].rotation_euler=(9,9,9)
+        posebones[self.bone_3.name].location = (100,80,99)
+        posebones[self.bone_3.name].rotation_euler = (4,-4,0.01)
+        # bpy.ops.object.mode_set(mode='OBJECT')
 
 def mess_around(switch_scenes=True, scenes_to_avoid=[]):
     """If you generally just want to f*ck up your project to see if your functions still work when settings change.
