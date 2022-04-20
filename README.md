@@ -37,7 +37,6 @@ I try to code these functions and scripts as clean as possible, including:
 - I'm constantly adding and changing stuff, which includes renaming or moving functions. This might confuse users in some cases when they try to "update" their functions.
 
 
-Also, all functions include a 'context' parameter. This is to make proper usage in addon operators more easy.
 
 # source
 https://github.com/Cardboy0/toolbox  

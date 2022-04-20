@@ -2,14 +2,12 @@ import bpy
 import warnings
 
 
-def create_shapekey(context, obj, reference):
+def create_shapekey(obj, reference):
     """Creates a new shapekey for an object with coordinates from the reference. Different reference types are accepted.
     Make sure that a Basis shapekey already exists when using this function.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     obj : bpy.types.Object
         Which object is supposed to get the shapekey
     reference : either bpy.types.Mesh, list, or dictionary (list is the fastest)
@@ -54,14 +52,12 @@ def create_shapekey(context, obj, reference):
     return new_shapekey
 
 
-def mute_all_shapekeys(context, mesh, mute=True, exclude=["BASIS"]):
+def mute_all_shapekeys(mesh, mute=True, exclude=["BASIS"]):
     """Mutes or unmutes all shapekeys of a mesh except the ones specified!
     Very fast.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     mesh : bpy.types.Mesh
         The mesh that has the shape keys
     mute : bool

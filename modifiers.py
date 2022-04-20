@@ -2,13 +2,11 @@ import bpy
 import warnings
 
 
-def get_modifier_position_in_stack(context, modifier):
+def get_modifier_position_in_stack(modifier):
     """The index of a modifier in the stack of the object it belongs to. That's the thing you see in the "modifier properties" tab.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     modifier : any bpy.types.Modifier
         The modifier whose index you want to get
 
@@ -49,7 +47,7 @@ def move_modifer_to_position_in_stack(context, modifier, position):
 class ButtonPresser():
 
     @classmethod
-    def try_to_bind(clss,context, modifier):
+    def try_to_bind(clss, modifier):
         """A few modifiers require you to press a *bind* button. Doing that from within Python is harder than you think
         because there are like a dozen of things that can go wrong, which is why I created this function to do it instead.
 
@@ -59,8 +57,6 @@ class ButtonPresser():
 
         Parameters
         ----------
-        context : bpy.types.Context
-            probably bpy.context
         modifier : bpy.types.Modifier
             The modifier where you want to simulate pressing the bind button.
 

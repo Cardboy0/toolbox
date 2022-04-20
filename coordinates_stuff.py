@@ -9,13 +9,11 @@ import mathutils
 # because the former has been coded for performance and thus faster that what you might come up with.
 
 
-def is_vector_close(context, vector1, vector2, ndigits=6):
+def is_vector_close(vector1, vector2, ndigits=6):
     """Checks if two (coordinate) vectors are approx. the same
 
     Parameters
     ----------
-    context : bpy.types.Context
-        Probably bpy.context
     vector1 : Vector (mathutils)
         First vector to compare
     vector2 : Vector (mathutils)
@@ -32,13 +30,11 @@ def is_vector_close(context, vector1, vector2, ndigits=6):
     return 0 == round(length, ndigits)
 
 
-def get_vertex_coordinates(context, mesh, vert_indices="ALL"):
+def get_vertex_coordinates(mesh, vert_indices="ALL"):
     """Returns the coordinate vectors of all specified vertices.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        Probably bpy.context
     mesh : bpy.types.Mesh
         The mesh in question
     vert_indices : list or "ALL"
@@ -134,14 +130,12 @@ class RotationHandling():
     __list_for_axis_angles = [0, 0, 0, 0]
 
     @classmethod
-    def get_rotation_type(clss, context, rotation_vector):
+    def get_rotation_type(clss, rotation_vector):
         """Gets the rotation type of a vector, meaning one of the values an objects rotation_mode accepts.
         Notice that the actual contents (the number values) of the rotationVector don't matter.
 
         Parameters
         ----------
-        context : bpy.types.Context
-            Probably bpy.context
         rotation_vector : The following types can be recognised:
             - Quaternion:
                 - mathutils.Quaternion
@@ -189,17 +183,14 @@ class RotationHandling():
             raise Exception(
                 "Couldn't recognise rotation vector of type " + str(v_type) + " with values:\n" + string_representation + "\n")
 
-    def set_rotation_type_of_source_vector(self, context, rotation_vector):
+    def set_rotation_type_of_source_vector(self, rotation_vector):
         """With this you tell this instance what type of rotation vectors you will later feed it.
 
         Parameters
         ----------
-        context : bpy.types.Context
-            Probably bpy.context
         rotation_vector : see get_rotation_type() method description
         """
-        self.source_rot_type = self.get_rotation_type(
-            context=context, rotation_vector=rotation_vector)
+        self.source_rot_type = self.get_rotation_type(rotation_vector=rotation_vector)
         if self.source_rot_type in self.__all_eulers:
             self.source_is_euler = True
             self.source_euler_as_tuple = tuple(
@@ -210,21 +201,18 @@ class RotationHandling():
             elif len(rotation_vector) == 2:
                 self.source_axis_angle_is_pair = True
 
-    def set_rotation_type_of_target_vector(self, context, rotation_vector):
+    def set_rotation_type_of_target_vector(self, rotation_vector):
         """With this you tell this instance what type of rotation vectors you later expect to gain from it.
 
         Parameters
         ----------
-        context : bpy.types.Context
-            Probably bpy.context
         rotation_vector : see get_rotation_type() method description
         """
-        self.target_rot_type = self.get_rotation_type(
-            context=context, rotation_vector=rotation_vector)
+        self.target_rot_type = self.get_rotation_type(rotation_vector=rotation_vector)
         if self.target_rot_type in self.__all_eulers:
             self.target_is_euler = True
 
-    def convert_rotation_vector_to_target(self, context, rotation_vector):
+    def convert_rotation_vector_to_target(self, rotation_vector):
         """Converts a rotation vector (being the type you set as the source type earlier) into the equivalent of the target type.
 
         Important 
@@ -234,8 +222,6 @@ class RotationHandling():
 
         Parameters
         ----------
-        context : bpy.types.Context
-            Probably bpy.context
         rotationVector : type depends on what source vector type you set earlier
             Rotation vector you want to see converted to target type.
 

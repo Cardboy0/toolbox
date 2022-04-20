@@ -7,13 +7,11 @@ import bpy
 # not being able to format code anymore, INCLUDING other files. It just disables it, I don't know why.
 
 
-def link_object_to_collections(context, obj, collections, keep_links=False):
+def link_object_to_collections(obj, collections, keep_links=False):
     """Links an object into one or multiple collections. By default also unlinks the obj from any other collections it's already in.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        Probably bpy.context
     obj : bpy.types.Object
         Object to link
     collections : bpy.types.Collection or list
@@ -46,13 +44,11 @@ def link_object_to_collections(context, obj, collections, keep_links=False):
                 coll.objects.unlink(obj)
 
 
-def link_collection_to_collections(context, coll, collections, keep_links=False):
+def link_collection_to_collections(coll, collections, keep_links=False):
     """ "Clean" linking of a collection into one or multiple other collections, i.e. unlinking it from any other collections at the same time.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        Probably bpy.context
     coll : bpy.types.Collection
         Collection you want to link
     collections : bpy.types.Collection or list

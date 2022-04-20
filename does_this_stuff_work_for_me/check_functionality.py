@@ -280,8 +280,7 @@ def run(context=None):
                     test_helpers.mess_around(switch_scenes=change_scenes)
 
                     # with original object data
-                    obj_copy = select_objects.duplicate_object(
-                        context=C, obj=obj_orig, keep_mesh=True)
+                    obj_copy = select_objects.duplicate_object(obj=obj_orig, keep_mesh=True)
                     if obj_copy == obj_orig or obj_copy is obj_orig:
                         return False
                     if test_transforms(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
@@ -301,8 +300,7 @@ def run(context=None):
                         switch_scenes=change_scenes, scenes_to_avoid=[orig_scene])
 
                     # with duplicate object data
-                    obj_copy = select_objects.duplicate_object(
-                        context=C, obj=obj_orig, keep_mesh=False)
+                    obj_copy = select_objects.duplicate_object(obj=obj_orig, keep_mesh=False)
                     if obj_copy == obj_orig or obj_copy is obj_orig:
                         return False
                     if test_transforms(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
@@ -421,8 +419,7 @@ def run(context=None):
                     raise Exception(
                         "object creation failed, aborting test...\n" + op.__name__)
                 test_helpers.mess_around(switch_scenes=True)
-                delete_stuff.delete_object_together_with_data(
-                    context=C, obj=new_obj)
+                delete_stuff.delete_object_together_with_data(obj=new_obj)
                 # means data object still exists
                 if collection_to_check.find(name) != -1:
                     return False
@@ -435,8 +432,7 @@ def run(context=None):
             if old_obj == new_obj or new_obj.data != None:
                 raise Exception(
                     "object creation failed, aborting test...\n" + op.__name__)
-            delete_stuff.delete_object_together_with_data(
-                context=C, obj=new_obj)
+            delete_stuff.delete_object_together_with_data(obj=new_obj)
             # there is no result to check here, the only thing that can go wrong is that the object itself isn't deleted or an exception happens
 
         current_objs = set(D.objects)
@@ -609,8 +605,7 @@ def run(context=None):
         coll_xxxx = collectionz.create_collection(C, "coll_xxxx", "MASTER")
         coll_cherry = collectionz.create_collection(C, "coll_cherry", "MASTER")
 
-        collectionz.link_collection_to_collections(
-            C, coll_cherry, orig_scene.collection, keep_links=False)
+        collectionz.link_collection_to_collections(coll_cherry, orig_scene.collection, keep_links=False)
 
         coll_dewberry = collectionz.create_collection(
             C, "coll_dewberry", orig_scene.collection)
@@ -619,19 +614,13 @@ def run(context=None):
         coll_babaco = collectionz.create_collection(
             C, "coll_babaco", coll_banana)
 
-        collectionz.link_collection_to_collections(
-            C, coll_blueberry, [coll_dewberry, coll_banana], keep_links=False)
-        collectionz.link_collection_to_collections(
-            C, coll_blueberry, coll_apple, keep_links=True)
+        collectionz.link_collection_to_collections(coll_blueberry, [coll_dewberry, coll_banana], keep_links=False)
+        collectionz.link_collection_to_collections(coll_blueberry, coll_apple, keep_links=True)
 
-        collectionz.link_object_to_collections(
-            C, obj1, [coll_apple, coll_dewberry], keep_links=False)
-        collectionz.link_object_to_collections(
-            C, obj2, [coll_apple, coll_dewberry], keep_links=False)
-        collectionz.link_object_to_collections(
-            C, obj1, [coll_babaco, coll_cherry], keep_links=False)
-        collectionz.link_object_to_collections(
-            C, obj2, [coll_babaco, coll_cherry], keep_links=True)
+        collectionz.link_object_to_collections(obj1, [coll_apple, coll_dewberry], keep_links=False)
+        collectionz.link_object_to_collections(obj2, [coll_apple, coll_dewberry], keep_links=False)
+        collectionz.link_object_to_collections(obj1, [coll_babaco, coll_cherry], keep_links=False)
+        collectionz.link_object_to_collections(obj2, [coll_babaco, coll_cherry], keep_links=True)
 
         master_coll = orig_scene.collection  # of the current scene
 
@@ -700,8 +689,7 @@ def run(context=None):
             dict_coords[i] = mesh.vertices[i].co.copy()
         # we will later identify vertices by their coordinates as comparison
 
-        result_dict = tag_vertices.TagVertices.tag(
-            C, mesh, "test", verts_to_tag)
+        result_dict = tag_vertices.TagVertices.tag(mesh, "test", verts_to_tag)
 
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
@@ -737,8 +725,8 @@ def run(context=None):
 
         # print(comparisonDict)
 
-        tag_result_list = tag_vertices.TagVertices.identify_verts(C,
-                                                                  mesh, result_dict["LAYERNAME"], result_dict["LAYERVALUES"])
+        tag_result_list = tag_vertices.TagVertices.identify_verts(mesh, result_dict["LAYERNAME"],
+                                                                  result_dict["LAYERVALUES"])
 
         if preparing == False:
             print("preparing for vertex tagging didnt work as planned")
@@ -759,8 +747,7 @@ def run(context=None):
 
         # everything is fine
         # bonus: test if datalayer is deletable
-        tag_vertices.TagVertices.remove_layer(
-            C, mesh, result_dict["LAYERNAME"])
+        tag_vertices.TagVertices.remove_layer(mesh, result_dict["LAYERNAME"])
         test_helpers.mess_around(switch_scenes=True)
         if len(mesh.vertex_layers_int) != 0:
             print("data layer removal didn't work")
@@ -1094,8 +1081,8 @@ def run(context=None):
                 elif specific_dict["type"] == "FACE":
                     indices.append(find_face_from_coordinates(something, mesh))
 
-            delete_stuff.delete_verts_faces_edges(
-                C, mesh, indices, specific_dict["type"], specific_dict["deleteChildElements"])
+            delete_stuff.delete_verts_faces_edges(mesh, indices, specific_dict["type"],
+                                                  specific_dict["deleteChildElements"])
             test_helpers.mess_around(switch_scenes=True)
 
             if len(mesh.vertices) != specific_dict["expectedResults"]["verts"] or len(mesh.edges) != specific_dict["expectedResults"]["edges"] or len(mesh.polygons) != specific_dict["expectedResults"]["faces"]:
@@ -1142,8 +1129,8 @@ def run(context=None):
         bpy.ops.mesh.primitive_plane_add()
         obj = C.object
         mesh = obj.data
-        coordinates = coordinates_stuff.get_vertex_coordinates(C, mesh, [1, 3])
-        if coordinates_stuff.is_vector_close(C, coordinates[1], coordinates[3], 6) == True:
+        coordinates = coordinates_stuff.get_vertex_coordinates(mesh, [1, 3])
+        if coordinates_stuff.is_vector_close(coordinates[1], coordinates[3], 6) == True:
             return False
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
@@ -1154,9 +1141,11 @@ def run(context=None):
         bpy.ops.transform.resize(value=(0.001, 0.001, 0.001), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True,
                                  use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
         bpy.ops.object.mode_set(mode='OBJECT')
-        coordinates = coordinates_stuff.get_vertex_coordinates(C, mesh, "ALL")
+        coordinates = coordinates_stuff.get_vertex_coordinates(mesh, "ALL")
         # after resizing, two vertices of the plane (if not diagonal) should have a distance of 0.002 meters
-        if coordinates_stuff.is_vector_close(C, coordinates[1], coordinates[3], 6) == True or coordinates_stuff.is_vector_close(C, coordinates[1], coordinates[3], 2) == False:
+        if coordinates_stuff.is_vector_close(coordinates[1], coordinates[3],
+                                             6) == True or coordinates_stuff.is_vector_close(coordinates[1],
+                                                                                             coordinates[3], 2) == False:
             return False
 
         try:
@@ -1217,17 +1206,15 @@ def run(context=None):
                         return False
 
                     rot_handler = Rot_Handler()
-                    rot_handler.set_rotation_type_of_source_vector(C, r_vector)
-                    rot_handler.set_rotation_type_of_target_vector(
-                        C, new_vector)
+                    rot_handler.set_rotation_type_of_source_vector(r_vector)
+                    rot_handler.set_rotation_type_of_target_vector(new_vector)
                     if i == False and special_axis_angle == False:
                         # important especially in the context of axis_angle, because we supply a tuple but the object will have a bpy_float array instead
                         real_r_vector = getattr(
                             obj_suzanne_comparison, attr_name)
                     else:
                         real_r_vector = r_vector
-                    converted_vector = rot_handler.convert_rotation_vector_to_target(
-                        C, real_r_vector)
+                    converted_vector = rot_handler.convert_rotation_vector_to_target(real_r_vector)
                     setattr(obj_suzanne_with_converted_rotation,
                             new_attr_name, converted_vector)
                     if test_helpers.are_objs_the_same(context=C, obj1=obj_suzanne_comparison, obj2=obj_suzanne_with_converted_rotation, mute=False) == False:
@@ -1265,10 +1252,9 @@ def run(context=None):
         # [0,1] are the indices of x and y in vectors
         for (list_or_dict, axis) in zip([[frame - 8, 0.5555, frame + 8, 1, frame - 12, 0], {frame - 8: 0.5555, frame + 8: 1, frame - 12: 0}], [0, 1]):
 
-            action = everything_key_frames.get_or_create_action(C, obj)
+            action = everything_key_frames.get_or_create_action(obj)
             fcurve = action.fcurves.new("location", index=axis)
-            everything_key_frames.create_key_frames_fast(
-                C, fcurve, list_or_dict)
+            everything_key_frames.create_key_frames_fast(fcurve, list_or_dict)
             for (changed_frame, value) in zip([frame - 8, frame + 8, frame - 12], [0.5555, 1, 0]):
                 C.scene.frame_set(changed_frame)
                 current_location = round(obj.location[axis], 5)
@@ -1336,7 +1322,8 @@ def run(context=None):
             return list(intersections)
 
         def remove_invalid_indices(list1):
-            return list(vertex_groups.validate_vert_indices_for_vg(context=C, vertex_group_or_mesh=obj.data, vert_indices=list1, return_type="set"))
+            return list(vertex_groups.validate_vert_indices_for_vg(vertex_group_or_mesh=obj.data, vert_indices=list1,
+                                                                   return_type="set"))
 
         obj = test_helpers.create_subdiv_obj(subdivisions=3, type="PLANE")
         # just to remove the selection and active status from the plane
@@ -1344,37 +1331,28 @@ def run(context=None):
         if C.object == obj or obj.select_get() == True:
             return False  # this shouldnt happen but you never know
 
-        vg1 = vertex_groups.create_vertex_group(
-            context=C, obj=obj, vg_name="VG1")
-        vg2 = vertex_groups.create_vertex_group(
-            context=C, obj=obj, vg_name="VG2")
+        vg1 = vertex_groups.create_vertex_group(obj=obj, vg_name="VG1")
+        vg2 = vertex_groups.create_vertex_group(obj=obj, vg_name="VG2")
         if obj.vertex_groups.active != None:
             return False
-        vg3 = vertex_groups.create_vertex_group(
-            context=C, obj=obj, vg_name="VG3")
+        vg3 = vertex_groups.create_vertex_group(obj=obj, vg_name="VG3")
         obj.vertex_groups.active = vg3
-        vertex_groups.set_vertex_group_values_uniform(
-            context=C, vertex_group=vg3, vertex_indices=list_unchanged, value=unchaged_uniform_value)
+        vertex_groups.set_vertex_group_values_uniform(vertex_group=vg3, vertex_indices=list_unchanged,
+                                                      value=unchaged_uniform_value)
 
-        vertex_groups.set_vertex_group_values_specific(
-            context=C, vertex_group=vg1, weights_for_verts=dict_specific)
-        vertex_groups.set_vertex_group_values_uniform(
-            context=C, vertex_group=vg1, vertex_indices=list_uniform, value=uniform_value)
+        vertex_groups.set_vertex_group_values_specific(vertex_group=vg1, weights_for_verts=dict_specific)
+        vertex_groups.set_vertex_group_values_uniform(vertex_group=vg1, vertex_indices=list_uniform,
+                                                      value=uniform_value)
 
-        vertex_groups.set_vertex_group_values_uniform(
-            context=C, vertex_group=vg2, vertex_indices=list_uniform, value=uniform_value)
-        vertex_groups.set_vertex_group_values_specific(
-            context=C, vertex_group=vg2, weights_for_verts=dict_specific)
+        vertex_groups.set_vertex_group_values_uniform(vertex_group=vg2, vertex_indices=list_uniform,
+                                                      value=uniform_value)
+        vertex_groups.set_vertex_group_values_specific(vertex_group=vg2, weights_for_verts=dict_specific)
 
-        vertex_groups.remove_verts_from_vertex_group(
-            context=C, vertex_group=vg1, vert_indices=list_remove, validate=True)
-        vertex_groups.remove_verts_from_vertex_group(
-            context=C, vertex_group=vg2, vert_indices=list_remove, validate=True)
+        vertex_groups.remove_verts_from_vertex_group(vertex_group=vg1, vert_indices=list_remove, validate=True)
+        vertex_groups.remove_verts_from_vertex_group(vertex_group=vg2, vert_indices=list_remove, validate=True)
 
-        verts_vg1 = vertex_groups.get_verts_in_vertex_group(
-            context=C, vertex_group=vg1)
-        verts_vg2 = vertex_groups.get_verts_in_vertex_group(
-            context=C, vertex_group=vg2)
+        verts_vg1 = vertex_groups.get_verts_in_vertex_group(vertex_group=vg1)
+        verts_vg2 = vertex_groups.get_verts_in_vertex_group(vertex_group=vg2)
 
         expected_verts = list_uniform.copy()
         for weight, index_list in dict_specific.items():
@@ -1387,10 +1365,8 @@ def run(context=None):
         if len(verts_vg1) != len(verts_vg2) or len(verts_vg1) != expected_amount or len(verts_vg1) == 0:
             return False
 
-        weights_vg1 = vertex_groups.get_vertex_weights(
-            context=C, vertex_group=vg1, vertex_indices=verts_vg1)
-        weights_vg2 = vertex_groups.get_vertex_weights(
-            context=C, vertex_group=vg2, vertex_indices=verts_vg2)
+        weights_vg1 = vertex_groups.get_vertex_weights(vertex_group=vg1, vertex_indices=verts_vg1)
+        weights_vg2 = vertex_groups.get_vertex_weights(vertex_group=vg2, vertex_indices=verts_vg2)
 
         # vg1 weights
         for vert_index in verts_vg1:
@@ -1444,10 +1420,8 @@ def run(context=None):
         if obj.vertex_groups.active_index != vg3.index or obj.vertex_groups.active != vg3:
             return False
 
-        vg3_verts = vertex_groups.get_verts_in_vertex_group(
-            context=C, vertex_group=vg3)
-        vg3_weights = vertex_groups.get_vertex_weights(
-            context=C, vertex_group=vg3, vertex_indices=vg3_verts)
+        vg3_verts = vertex_groups.get_verts_in_vertex_group(vertex_group=vg3)
+        vg3_weights = vertex_groups.get_vertex_weights(vertex_group=vg3, vertex_indices=vg3_verts)
 
         if len(vg3_verts) != len(remove_invalid_indices(list_unchanged)):
             return False
@@ -1553,25 +1527,23 @@ def run(context=None):
 
         def test_uniform_weight_setting():
             # test if the class method is able to change any set of weights (0, smaller, 1) to the chosen value
-            vg_all_0_5 = vertex_groups.create_vertex_group(
-                context=C, obj=basic_monkey, vg_name="ALL VERTICES 0.5")
-            vertex_groups.set_vertex_group_values_uniform(
-                context=C, vertex_group=vg_all_0_5, vertex_indices="ALL", value=0.5)
-            vg_some_0_5 = vertex_groups.create_vertex_group(
-                context=C, obj=basic_monkey, vg_name="SOME VERTICES 0.5")
-            vertex_groups.set_vertex_group_values_uniform(
-                context=C, vertex_group=vg_some_0_5, vertex_indices=[1, 7, 23, 83], value=0.5)
+            vg_all_0_5 = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="ALL VERTICES 0.5")
+            vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_all_0_5, vertex_indices="ALL", value=0.5)
+            vg_some_0_5 = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="SOME VERTICES 0.5")
+            vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_some_0_5, vertex_indices=[1, 7, 23, 83],
+                                                          value=0.5)
             for weight in (0, 0.2, 1):
                 new_monkey = create_monkey()
                 test_helpers.mess_around(switch_scenes=False)
-                vg_some_values = vertex_groups.create_vertex_group(
-                    context=C, obj=new_monkey, vg_name="SOME VERTICES " + str(weight))
-                vertex_groups.set_vertex_group_values_uniform(
-                    context=C, vertex_group=vg_some_values, vertex_indices=[1, 7, 23, 83], value=weight)
+                vg_some_values = vertex_groups.create_vertex_group(obj=new_monkey,
+                                                                   vg_name="SOME VERTICES " + str(weight))
+                vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_some_values,
+                                                              vertex_indices=[1, 7, 23, 83], value=weight)
 
                 # test with only_assigned = False
-                mod_uniform = vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(
-                    context=C, obj=new_monkey, vg_name=vg_some_values.name, only_assigned=False, weight=0.5)
+                mod_uniform = vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(obj=new_monkey,
+                                                                                       vg_name=vg_some_values.name,
+                                                                                       only_assigned=False, weight=0.5)
                 if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_all_0_5.name, vg2_name=vg_some_values.name) == False:
                     print(
                         "Testing vg_uniform failed. Current weight that was tested: " + str(weight))
@@ -1588,8 +1560,9 @@ def run(context=None):
                 new_monkey.modifiers.remove(mod_uniform)
 
                 # test with only_assigned = True
-                mod_uniform = vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(
-                    context=C, obj=new_monkey, vg_name=vg_some_values.name, only_assigned=True, weight=0.5)
+                mod_uniform = vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(obj=new_monkey,
+                                                                                       vg_name=vg_some_values.name,
+                                                                                       only_assigned=True, weight=0.5)
                 if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_some_0_5.name, vg2_name=vg_some_values.name) == False:
                     print(
                         "Testing vg_uniform failed. Current weight that was tested: " + str(weight))
@@ -1612,18 +1585,15 @@ def run(context=None):
             test_helpers.mess_around(switch_scenes=False)
             some_weights = {0.2: [1, 5, 8], 0.8: [7, 2, 11], 1: [20]}
 
-            vg_specific = vertex_groups.create_vertex_group(
-                context=C, obj=basic_monkey, vg_name="Specific vg")
-            vertex_groups.set_vertex_group_values_specific(
-                context=C, vertex_group=vg_specific, weights_for_verts=some_weights)
+            vg_specific = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg")
+            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=some_weights)
 
-            vg_specific_new_monkey = vertex_groups.create_vertex_group(
-                context=C, obj=new_monkey, vg_name="Specific vg")
-            vertex_groups.set_vertex_group_values_specific(
-                context=C, vertex_group=vg_specific_new_monkey, weights_for_verts=some_weights)
+            vg_specific_new_monkey = vertex_groups.create_vertex_group(obj=new_monkey, vg_name="Specific vg")
+            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific_new_monkey,
+                                                           weights_for_verts=some_weights)
 
-            dict_copy = vertex_groups.VGroupsWithModifiers.mimic_vertex_group(
-                context=C, obj=new_monkey, vg_to_duplicate=vg_specific_new_monkey.name)
+            dict_copy = vertex_groups.VGroupsWithModifiers.mimic_vertex_group(obj=new_monkey,
+                                                                              vg_to_duplicate=vg_specific_new_monkey.name)
             vg_copy = dict_copy["new vg"]
             new_mod = dict_copy["mod"]
 
@@ -1650,10 +1620,8 @@ def run(context=None):
             test_helpers.mess_around(switch_scenes=False)
             other_weights = {0.3: [6, 1], 0.9: [7, 0], 1: [11, 12, 23]}
 
-            vg_specific = vertex_groups.create_vertex_group(
-                context=C, obj=basic_monkey, vg_name="Specific vg another")
-            vertex_groups.set_vertex_group_values_specific(
-                context=C, vertex_group=vg_specific, weights_for_verts=other_weights)
+            vg_specific = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg another")
+            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=other_weights)
 
             new_mod = vertex_groups.VGroupsWithModifiers.mimic_external_vertex_group(
                 context=C, main_obj=new_monkey, target_obj=basic_monkey, vg_of_target=vg_specific.name)
@@ -1677,18 +1645,14 @@ def run(context=None):
                 50, 51, 52], 0: have_zero_weights}
             new_monkey = create_monkey()
             test_helpers.mess_around(switch_scenes=False)
-            vg_specific = vertex_groups.create_vertex_group(
-                context=C, obj=basic_monkey, vg_name="Specific vg")
-            vertex_groups.set_vertex_group_values_specific(
-                context=C, vertex_group=vg_specific, weights_for_verts=weight_dict_old)
+            vg_specific = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg")
+            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=weight_dict_old)
 
-            vg_specific_new = vertex_groups.create_vertex_group(
-                context=C, obj=new_monkey, vg_name="Specific vg antother")
-            vertex_groups.set_vertex_group_values_specific(
-                context=C, vertex_group=vg_specific_new, weights_for_verts=weight_dict_new)
+            vg_specific_new = vertex_groups.create_vertex_group(obj=new_monkey, vg_name="Specific vg antother")
+            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific_new,
+                                                           weights_for_verts=weight_dict_new)
 
-            mod = vertex_groups.VGroupsWithModifiers.remove_0_weights(
-                context=C, obj=new_monkey, vg_name=vg_specific_new.name)
+            mod = vertex_groups.VGroupsWithModifiers.remove_0_weights(obj=new_monkey, vg_name=vg_specific_new.name)
             if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_specific.name, vg2_name=vg_specific_new.name) == False:
                 print("Failed to remove 0 weight vertices")
                 return False
@@ -1779,8 +1743,7 @@ def run(context=None):
             t_value = small_list[0]
             #refObj = smallList[1]
             ref = small_list[2]
-            new_shapekey = shapekeys.create_shapekey(
-                context=C, obj=cube, reference=ref)
+            new_shapekey = shapekeys.create_shapekey(obj=cube, reference=ref)
             small_list.append(new_shapekey)
 
         for x in range(2):  # mess stuff up after the first loop was run
@@ -1825,27 +1788,23 @@ def run(context=None):
         third_sk = reference_dict_as_list[2][1][3]
 
         # mute all
-        shapekeys.mute_all_shapekeys(
-            context=C, mesh=cube.data, mute=True, exclude=[])
+        shapekeys.mute_all_shapekeys(mesh=cube.data, mute=True, exclude=[])
         for sk in cube.data.shape_keys.key_blocks:
             if sk.mute == False:
                 return False
         if basis_sk.mute == False:  # if for some reason it isn't included in the previous for-loop
             return False
         # unmute all
-        shapekeys.mute_all_shapekeys(
-            context=C, mesh=cube.data, mute=False, exclude=[])
+        shapekeys.mute_all_shapekeys(mesh=cube.data, mute=False, exclude=[])
         for sk in cube.data.shape_keys.key_blocks:
             if sk.mute == True:
                 return False
 
-        shapekeys.mute_all_shapekeys(
-            context=C, mesh=cube.data, mute=True, exclude=["BASIS", second_sk])
+        shapekeys.mute_all_shapekeys(mesh=cube.data, mute=True, exclude=["BASIS", second_sk])
         if first_sk.mute == False or third_sk.mute == False or basis_sk.mute == True or second_sk.mute == True:
             return False
 
-        shapekeys.mute_all_shapekeys(
-            context=C, mesh=cube.data, mute=False, exclude=[first_sk])
+        shapekeys.mute_all_shapekeys(mesh=cube.data, mute=False, exclude=[first_sk])
         if first_sk.mute == False or third_sk.mute == True or basis_sk.mute == True or second_sk.mute == True:
             return False
 
@@ -1879,8 +1838,7 @@ def run(context=None):
         test_helpers.mess_around(switch_scenes=True)
         positions = dict()  # {position: modifier}
         for mod in obj.modifiers:
-            positions[modifiers.get_modifier_position_in_stack(
-                context=C, modifier=mod)] = mod
+            positions[modifiers.get_modifier_position_in_stack(modifier=mod)] = mod
         first_mod = positions[0]
         last_mod = positions[len(obj.modifiers) - 1]
         # need to switch back to original scene if we want to select the obj
@@ -1899,12 +1857,10 @@ def run(context=None):
         third_mod = positions[2]
         modifiers.move_modifer_to_position_in_stack(
             context=C, modifier=second_mod, position=len(obj.modifiers) - 1)
-        last_pos_positive = modifiers.get_modifier_position_in_stack(
-            context=C, modifier=second_mod)
+        last_pos_positive = modifiers.get_modifier_position_in_stack(modifier=second_mod)
         modifiers.move_modifer_to_position_in_stack(
             context=C, modifier=third_mod, position=-1)
-        last_pos_negative = modifiers.get_modifier_position_in_stack(
-            context=C, modifier=third_mod)
+        last_pos_negative = modifiers.get_modifier_position_in_stack(modifier=third_mod)
         if last_pos_negative != last_pos_positive or last_pos_negative != len(obj.modifiers) - 1:
             return False
 
@@ -1934,21 +1890,21 @@ def run(context=None):
             test_helpers.mess_around(False)
 
             smod.target = empty_obj
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == True:
+            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == True:
                 return False  # target without geometry cannot be bound
 
             smod.target = full_obj
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == False:
+            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == False:
                 return False  # binding should be possible and thus successful
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == True:
+            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == True:
                 return False  # unbinding, so no bind should be detected
 
             smod.target = None
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == True:
+            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == True:
                 return False  # no target obj is set and binding shouldn't be possible
 
             smod.target = full_obj
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == False:
+            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == False:
                 return False  # binding should be possible and thus successful
 
             return True
@@ -1984,16 +1940,16 @@ def run(context=None):
                 name='LaplacianDeformMod', type='LAPLACIANDEFORM')
             test_helpers.mess_around(False)
 
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=ld_mod) == True:
+            if modifiers.ButtonPresser.try_to_bind(modifier=ld_mod) == True:
                 return False  # doesnt work with no vertex group selected
 
             filled_vg = obj.vertex_groups.new(name="filled")
             # adds a weight of 0.5 to vertex with index 0
             filled_vg.add([0], 0.5, "ADD")
             ld_mod.vertex_group = filled_vg.name
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=ld_mod) == False:
+            if modifiers.ButtonPresser.try_to_bind(modifier=ld_mod) == False:
                 return False  # should work since vertex group has at least one vertex in it
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=ld_mod) == True:
+            if modifiers.ButtonPresser.try_to_bind(modifier=ld_mod) == True:
                 # unbinding, so False is expected as the return value.
                 return False
 
@@ -2015,13 +1971,13 @@ def run(context=None):
             target_obj = test_helpers.create_subdiv_obj(0, "PLANE")
             test_helpers.mess_around(False)
 
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=md_mod) == True:
+            if modifiers.ButtonPresser.try_to_bind(modifier=md_mod) == True:
                 return False  # no target object selected, binding shouldnt be possible
             md_mod.object = target_obj
 
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=md_mod) == False:
+            if modifiers.ButtonPresser.try_to_bind(modifier=md_mod) == False:
                 return False  # target object selected, binding should be possible
-            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=md_mod) == True:
+            if modifiers.ButtonPresser.try_to_bind(modifier=md_mod) == True:
                 # unbinding, so False should be returned by the function.
                 return False
 

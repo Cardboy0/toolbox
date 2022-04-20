@@ -15,7 +15,7 @@ class TagVertices:
     """
 
     @staticmethod
-    def tag(context, mesh, layer_name="tagged_vertices", vert_indices="ALL"):
+    def tag(mesh, layer_name="tagged_vertices", vert_indices="ALL"):
         """Tags the vertices with an int data layer so they can be identified by other methods of this class later.
 
         Parameters
@@ -60,7 +60,7 @@ class TagVertices:
 
     @staticmethod
     # returns a list where the position of a value is the old index, and the value itself the new index
-    def identify_verts(context, mesh, layer_name, old_layer_values):
+    def identify_verts(mesh, layer_name, old_layer_values):
         """Find out which old vertex is which new vertex in your mesh. You need the dictionary from the tag() method for this
 
         Parameters
@@ -100,7 +100,7 @@ class TagVertices:
 
     @staticmethod
     # removes a datalayer
-    def remove_layer(context, mesh, layer_name):
+    def remove_layer(mesh, layer_name):
         """Removes a data layer that has been created by the tag() method. Not actually neccessary, but probably advisable.
 
         Parameters

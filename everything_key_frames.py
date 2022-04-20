@@ -3,15 +3,13 @@ import bpy
 
 # deals with all (or most) things keyframes (-> fcurves)
 
-def get_or_create_action(context, something):
+def get_or_create_action(something):
     """Get the action of the provided class instance or create a new one if it doesn't exist yet
 
     This should work on anything that is able to have the animation_data attribute. 
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     something : anything that can have a animation_data attribute
         The "object" for which you want to get the action
 
@@ -43,15 +41,13 @@ def get_or_create_action(context, something):
             "Something went wrong when trying to get the action of " + something.__str__())
 
 
-def create_key_frames_fast(context, fcurve, values):
+def create_key_frames_fast(fcurve, values):
     """If you want to create keyframes for a fcurve in a fast way.
 
     Attention: Should not be used to add keyframes to an fcurve if any keyframes already exist.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     fcurve : bpy.types.FCurve
         The fcurve for which you want keyframes to be created.
         fcurves are part of actions (bpy.types.Action)

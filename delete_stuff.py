@@ -8,7 +8,7 @@ import bmesh
 # https://blender.stackexchange.com/questions/27234/python-how-to-completely-remove-an-object
 
 
-def delete_object_together_with_data(context, obj):
+def delete_object_together_with_data(obj):
     """Deletes the specified object AND its data (depending on the type this can be the a mesh, armature, light, etc.)
 
     Vital for scripts where you create large amounts of objects and delete them again, as the "default" deleting does not remove the obj.data, meaning they would pile up in your file.
@@ -71,7 +71,7 @@ def delete_object_together_with_data(context, obj):
 
 
 # Small note: You can get a list of all indices of e.g. the mesh vertices by writing myIndexList = list( range( len( mesh.vertices)))
-def delete_verts_faces_edges(context, mesh, index_list, type="VERTEX", delete_child_elements=False):
+def delete_verts_faces_edges(mesh, index_list, type="VERTEX", delete_child_elements=False):
     """Deletes all vertices, edges or faces of your mesh whose index is in the indexList parameter.
 
     Example: delete_VertsFacesEdges(C, someMesh, [1,5,2,3],"EDGE",False) would delete edges number 1, 2, 3 and 5 from the specified mesh
@@ -79,8 +79,6 @@ def delete_verts_faces_edges(context, mesh, index_list, type="VERTEX", delete_ch
 
     Parameters
     ----------
-    context : bpy.types.Context
-        Most likely bpy.context
     mesh : bpy.types.Mesh
         Mesh whose verts/edges/faces you want deleted
     index_list : list on ints

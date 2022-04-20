@@ -4,13 +4,11 @@ import bpy
 # as the name implies, is meant to deal with vertex groups
 
 
-def create_vertex_group(context, obj, vg_name="Group"):
+def create_vertex_group(obj, vg_name="Group"):
     """Creates and returns a new vertex group for the specified object.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     obj : bpy.types.Object
         Which object is supposed to get the new vertex group
     vg_name : str
@@ -33,13 +31,11 @@ def create_vertex_group(context, obj, vg_name="Group"):
     return new_vg
 
 
-def validate_vert_indices_for_vg(context, vertex_group_or_mesh, vert_indices, return_type="list"):
+def validate_vert_indices_for_vg(vertex_group_or_mesh, vert_indices, return_type="list"):
     """Removes vertex indices from the supplied list that cannot be used for the given mesh / vertex group
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     vertex_group_or_mesh : bpy.types.VertexGroup or bpy.types.Mesh
         The vertex group (or mesh in general) you want your indices validated for.
     vert_indices : list-like collection of ints
@@ -65,14 +61,12 @@ def validate_vert_indices_for_vg(context, vertex_group_or_mesh, vert_indices, re
     return it(filter(lambda index: (index >= 0 and index < total_vert_amount), vert_indices))
 
 
-def set_vertex_group_values_uniform(context, vertex_group, vertex_indices="ALL", value=1):
+def set_vertex_group_values_uniform(vertex_group, vertex_indices="ALL", value=1):
     """Sets all weights of the given vertices to the specified value in the vertex group. 
     If vertices aren't yet part of the vertex group, they will get added automatically.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     vertex_group : bpy.types.VertexGroup
         In which vertex group you want to set the weights in.
     vertex_indices : list or similar, containing ints - or "ALL"
@@ -91,25 +85,22 @@ def set_vertex_group_values_uniform(context, vertex_group, vertex_indices="ALL",
     # do not use "ADD" instead of "REPLACE" - "ADD" *adds* the given value to the current value
 
 
-def set_vertex_group_values_specific(context, vertex_group, weights_for_verts):
+def set_vertex_group_values_specific(vertex_group, weights_for_verts):
     """Sets weights of the given vertices to different, specified values in the vertex group. 
     If vertices aren't yet part of the vertex group, they will get added automatically.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     vertex_group : bpy.types.VertexGroup
         In which vertex group you want to set the weights in.
     weights_for_verts : dict; {float: multipleInts}
         The dictionary uses weights as keys. Vertices that are supposed to get that weight need to be included in the value (of type list or similar - even if only one int is wanted).
     """
     for weight, vert_indices in weights_for_verts.items():
-        set_vertex_group_values_uniform(
-            context=context, vertex_group=vertex_group, vertex_indices=vert_indices, value=weight)
+        set_vertex_group_values_uniform(vertex_group=vertex_group, vertex_indices=vert_indices, value=weight)
 
 
-def remove_verts_from_vertex_group(context, vertex_group, vert_indices="ALL", validate=False):
+def remove_verts_from_vertex_group(vertex_group, vert_indices="ALL", validate=False):
     """Remove the specified vertices from the vertex group.
 
     Vertex Indices must not be invalid, otherwise Blender will crash completely.
@@ -118,8 +109,6 @@ def remove_verts_from_vertex_group(context, vertex_group, vert_indices="ALL", va
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     vertex_group : bpy.types.VertexGroup
         In which vertex group you want to set the weights in.
     vert_indices : list containing ints, or "ALL"
@@ -135,19 +124,17 @@ def remove_verts_from_vertex_group(context, vertex_group, vert_indices="ALL", va
         vert_indices = range(len(obj.data.vertices))
 
     if validate == True:
-        vert_indices = validate_vert_indices_for_vg(
-            context=context, vertex_group_or_mesh=vertex_group, vert_indices=vert_indices, return_type="list")
+        vert_indices = validate_vert_indices_for_vg(vertex_group_or_mesh=vertex_group, vert_indices=vert_indices,
+                                                    return_type="list")
 
     vertex_group.remove(vert_indices)
 
 
-def get_verts_in_vertex_group(context, vertex_group):
+def get_verts_in_vertex_group(vertex_group):
     """Tells you which vertices are currently assigned to the given vertex group.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     vertex_group : bpy.types.VertexGroup
         The vertex group to analyse
 
@@ -171,14 +158,12 @@ def get_verts_in_vertex_group(context, vertex_group):
     return found_verts
 
 
-def get_vertex_weights(context, vertex_group, vertex_indices):
+def get_vertex_weights(vertex_group, vertex_indices):
     """Returns the weights of given vertices inside a vertex group.
     WARNING: All supplied vertices must exist within the vertex group, otherwise Blender will throw an error.
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     vertex_group : bpy.types.VertexGroup
         The vertex group to analyse
     vertex_indices : List or similar
@@ -274,14 +259,12 @@ class VGroupsWithModifiers():
     #       Using them directly only adds potential problems.
 
     @classmethod
-    def vertex_weight_uniform(clss, context, obj, vg_name: str, only_assigned=False, weight=1):
+    def vertex_weight_uniform(clss, obj, vg_name: str, only_assigned=False, weight=1):
         """Adds a Vertex Weight Mix modifier that assigns every vertex the specified weight. 
         Can also include vertices that haven't been assigned to the vertex group yet.
 
         Parameters
         ----------
-        context : bpy.types.Context
-            probably bpy.context
         obj : bpy.types.Object
             Object that the vertex_group belongs to
         vg_name : str
@@ -359,15 +342,13 @@ class VGroupsWithModifiers():
         return mod_data_transfer
 
     @classmethod
-    def mimic_vertex_group(clss, context, obj, vg_to_duplicate: str):
+    def mimic_vertex_group(clss, obj, vg_to_duplicate: str):
         """ Basically duplicates a vertex group by using a Vertex Weight Mix Modifier.
 
         If you want the same but for a vertex group from another object, use the mimic_external_vertex_group() method.
 
         Parameters
         ----------
-        context : bpy.types.Context
-            probably bpy.context
         obj : bpy.types.Object
             Your object
         vg_to_duplicate : str
@@ -390,13 +371,11 @@ class VGroupsWithModifiers():
         return {"mod": mod_vweight_mix, "new vg": vg_copy}
 
     @classmethod
-    def remove_0_weights(clss, context, obj, vg_name: str):
+    def remove_0_weights(clss, obj, vg_name: str):
         """Removes/unassigns any vertex with a weight of 0 from a vertex group using a Vertex Weight Edit Modifier.
 
         Parameters
         ----------
-        context : bpy.types.Context
-            probably bpy.context
         obj : bpy.types.Object
             Object that is supposed to get the new modifier.
         vg_name : str

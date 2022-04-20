@@ -39,7 +39,7 @@ def select_objects(context, object_list, deselect_others=True, active=None):
         context.view_layer.objects.active = active
 
 #only allow for one object at a time because of return value
-def duplicate_object(context, obj, keep_mesh=False):
+def duplicate_object(obj, keep_mesh=False):
     """Creates a duplicate of an object. The duplicate will be in the same collections and scenes as the original one.
     
     Stuff that will also be duplicated include, but are not limited to:
@@ -50,8 +50,6 @@ def duplicate_object(context, obj, keep_mesh=False):
 
     Parameters
     ----------
-    context : bpy.types.Context
-        probably bpy.context
     obj : bpy.types.Object
         Blender Object you want to create a duplicate for
     keep_mesh : True or False
