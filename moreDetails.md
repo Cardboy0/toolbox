@@ -60,7 +60,7 @@ https://blender.stackexchange.com/questions/51044/how-to-import-a-blender-python
   
 
 ## __Things starting with two underscores
-You will see that at some locations, my variables or function will start with two underscores (but not also end with two underscores, those are special "magic" functions or attributes):
+You will see that at some locations, my variables or function will start with two underscores (but not also end with two underscores, those are different, special "magic" functions or attributes):
 ```
 __some_variable = 4
 def __some_function():
@@ -96,3 +96,5 @@ Hint: Accessing, although obviously discouraged, is still possible although you 
 This whole thing with using underscores is called *"Name Wrangling"* and here are two example articles about it if you want to know more:  
 https://stackoverflow.com/questions/1301346/what-is-the-meaning-of-single-and-double-underscore-before-an-object-name  
 https://docs.python.org/3/tutorial/classes.html#private-variables
+
+Sometimes you might also see one underscore being used instead of two in my code, that's because of some naming problems.

@@ -445,6 +445,91 @@ def run(context=None):
 
         return True
 
+    # information_gathering.py
+
+    def test_information_gathering():
+        try:
+            from .. import information_gathering
+            importlib.reload(information_gathering)
+            # deleteStuff = bpy.data.texts["deleteStuff.py"].as_module()
+        except:
+            print("COULDN'T IMPORT information_gathering")
+            return False
+
+        expectedTypes = {
+            bpy.types.Object: 'OBJECT',
+            bpy.types.Mesh: 'MESH',
+            bpy.types.Camera: 'CAMERA',
+            bpy.types.Light: 'LIGHT',  # test subtypes and real objects #use .base in function
+            bpy.types.Armature: 'ARMATURE',
+            bpy.types.Curve: 'CURVE',
+            bpy.types.Collection: 'COLLECTION',
+            bpy.types.Image: 'IMAGE',
+            bpy.types.Material: 'MATERIAL',
+            bpy.types.Speaker: 'SPEAKER',
+            bpy.types.World: 'WORLD',
+            bpy.types.Scene: 'SCENE',
+            bpy.types.LightProbe: 'LIGHT_PROBE',
+            bpy.types.Material: 'MATERIAL',
+            bpy.types.Action: 'ACTION',
+            bpy.types.Brush: 'BRUSH',
+            bpy.types.CacheFile: 'CACHEFILE',
+            bpy.types.VectorFont: 'FONT',
+            bpy.types.GreasePencil: 'GREASEPENCIL',
+            bpy.types.Key: 'KEY',
+            bpy.types.Library: 'LIBRARY',
+            bpy.types.FreestyleLineStyle: 'LINESTYLE',
+            bpy.types.Lattice: 'LATTICE',
+            bpy.types.Mask: 'MASK',
+            bpy.types.MetaBall: 'META',
+            bpy.types.MovieClip: 'MOVIECLIP',
+            bpy.types.NodeTree: 'NODETREE',
+            bpy.types.PaintCurve: 'PAINTCURVE',
+            bpy.types.Palette: 'PALETTE',
+            bpy.types.Particle: 'PARTICLE',
+            # bpy.types.Simulation:'SIMULATION', # bpy.types.Simulation doesn't even exist
+            bpy.types.Sound: 'SOUND',
+            bpy.types.Text: 'TEXT',
+            bpy.types.Texture: 'TEXTURE',
+            # bpy.types.Hair:'HAIR', # see comment above
+            # bpy.types.PointCloud:'POINTCLOUD', # see comment above
+            bpy.types.Volume: 'VOLUME',
+            bpy.types.WindowManager: 'WINDOWMANAGER',
+            bpy.types.WorkSpace: 'WORKSPACE'
+        }
+
+        driver = D.objects[0].driver_add("location", 0).driver
+        var = driver.variables.new()
+
+        # just testing by types:
+        for class_type, expected in expectedTypes.items():
+            try:
+                var.targets[0].id_type = expected
+            except:
+                print("'" + expected + "' no longer is a valid value, update " + test_information_gathering.__name__)
+                return False
+            result = information_gathering.get_string_type(class_type, capitalized=True)
+            if result != expected:
+                print("Unexpected result: " + expected + " vs " + result)
+                return False
+        # test not with a type but actual object
+        mesh = bpy.data.meshes.new("my mesh")
+        if information_gathering.get_string_type(mesh, capitalized=True) != "MESH":
+            print("Mesh identification failed")
+            return False
+        # test with a subtype of a main type
+        o.object.light_add(type='POINT')
+        point_light = C.object.data
+        if type(point_light) != bpy.types.PointLight:
+            print("point light creation failed")
+            return False
+        if information_gathering.get_string_type(point_light, capitalized=True) != "LIGHT":
+            print("Point Light identification failed")
+            print(information_gathering.get_string_type(point_light, capitalized=True))
+            return False
+
+        return True
+
     # Collections.py
 
     def test_create_collection():
@@ -1849,21 +1934,21 @@ def run(context=None):
             test_helpers.mess_around(False)
 
             smod.target = empty_obj
-            if modifiers.try_to_bind(context=C, modifier=smod) == True:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == True:
                 return False  # target without geometry cannot be bound
 
             smod.target = full_obj
-            if modifiers.try_to_bind(context=C, modifier=smod) == False:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == False:
                 return False  # binding should be possible and thus successful
-            if modifiers.try_to_bind(context=C, modifier=smod) == True:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == True:
                 return False  # unbinding, so no bind should be detected
 
             smod.target = None
-            if modifiers.try_to_bind(context=C, modifier=smod) == True:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == True:
                 return False  # no target obj is set and binding shouldn't be possible
 
             smod.target = full_obj
-            if modifiers.try_to_bind(context=C, modifier=smod) == False:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=smod) == False:
                 return False  # binding should be possible and thus successful
 
             return True
@@ -1899,16 +1984,16 @@ def run(context=None):
                 name='LaplacianDeformMod', type='LAPLACIANDEFORM')
             test_helpers.mess_around(False)
 
-            if modifiers.try_to_bind(context=C, modifier=ld_mod) == True:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=ld_mod) == True:
                 return False  # doesnt work with no vertex group selected
 
             filled_vg = obj.vertex_groups.new(name="filled")
             # adds a weight of 0.5 to vertex with index 0
             filled_vg.add([0], 0.5, "ADD")
             ld_mod.vertex_group = filled_vg.name
-            if modifiers.try_to_bind(context=C, modifier=ld_mod) == False:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=ld_mod) == False:
                 return False  # should work since vertex group has at least one vertex in it
-            if modifiers.try_to_bind(context=C, modifier=ld_mod) == True:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=ld_mod) == True:
                 # unbinding, so False is expected as the return value.
                 return False
 
@@ -1930,19 +2015,38 @@ def run(context=None):
             target_obj = test_helpers.create_subdiv_obj(0, "PLANE")
             test_helpers.mess_around(False)
 
-            if modifiers.try_to_bind(context=C, modifier=md_mod) == True:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=md_mod) == True:
                 return False  # no target object selected, binding shouldnt be possible
             md_mod.object = target_obj
 
-            if modifiers.try_to_bind(context=C, modifier=md_mod) == False:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=md_mod) == False:
                 return False  # target object selected, binding should be possible
-            if modifiers.try_to_bind(context=C, modifier=md_mod) == True:
+            if modifiers.ButtonPresser.try_to_bind(context=C, modifier=md_mod) == True:
                 # unbinding, so False should be returned by the function.
                 return False
 
             return True
 
-        for test_some_mod in (test_surface_deform, test_laplacian_deform, test_mesh_deform):
+        def test_data_transfer(obj):
+            obj_target = test_helpers.create_subdiv_obj(2, "PLANE")
+            obj_target.vertex_groups.new()
+            dt_mod = obj.modifiers.new(name='Data transfer', type='DATA_TRANSFER')
+            dt_mod.object = obj_target
+            dt_mod.use_vert_data = True
+            dt_mod.data_types_verts = {'VGROUP_WEIGHTS'}
+            dt_mod.vert_mapping = 'TOPOLOGY'
+            dt_mod.layers_vgroup_select_src = 'ALL'
+            test_helpers.mess_around(False)
+
+            if len(obj.vertex_groups) != 0:
+                return False
+            modifiers.ButtonPresser.data_transfer_button(dt_mod)
+            if len(obj.vertex_groups) == 0:
+                return False
+
+            return True
+
+        for test_some_mod in (test_surface_deform, test_laplacian_deform, test_mesh_deform, test_data_transfer):
             # testing all operator binds in different scene-context
             for set_scene_context in (object_in_current_scene, object_in_other_scene, object_in_no_scene):
                 plane = test_helpers.create_subdiv_obj(0, "PLANE")
@@ -1956,11 +2060,267 @@ def run(context=None):
 
         return True
 
+    def test_custom_properties():
+        try:
+            from ..advanced import custom_properties
+            importlib.reload(custom_properties)
+            # modifiers = bpy.data.texts["modifiers.py"].as_module()
+        except:
+            print("COULDN'T IMPORT custom_properties")
+            return False
+
+        name_to_use = "Bread"
+        description_to_use = "...can be tasty"
+
+        def test_bool(blend_object_creator):
+            blend_obj = blend_object_creator()
+            for default_to_use in (0, 1, False, True):
+                handler = custom_properties.CustomPropertyHandler.SimpleBool(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=default_to_use)
+                if handler.get_value() != default_to_use:
+                    print("Wrong default value for bool prop")
+                    return False
+                if handler.type != bool:
+                    print("Wrong type for boolean prop")
+                    return False
+                t_dict = handler.get_dict()
+                if t_dict["description"] != description_to_use:  # has no "name" key
+                    print("Wrong name or description")
+                    return False
+                custom_properties.CustomPropertyHandler.change_description(blend_obj=blend_obj,prop_name=name_to_use,description="new Description")
+                if handler.get_dict()["description"] != "new Description":
+                    print("Description wasn't changed")
+                    return False
+            return True
+
+        def test_float(blend_object_creator):
+            blend_obj = blend_object_creator()
+            handler = custom_properties.CustomPropertyHandler.SimpleFloat(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=8, min=0, max=51, soft_min=None, soft_max=15)
+            if type(handler.get_value()) != float or handler.get_value() != 8.0:
+                print("Wrong default value for float prop")
+                return False
+            if handler.type != float:
+                print("Wrong type for float prop")
+                return False
+            t_dict = handler.get_dict()
+            if t_dict["description"] != description_to_use:  # has no "name" key
+                print("Wrong name or description")
+                return False
+            return True
+
+        def test_integer(blend_object_creator):
+            blend_obj = blend_object_creator()
+            handler = custom_properties.CustomPropertyHandler.SimpleInteger(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=-89, min=-10000, max=24, soft_min=0, soft_max=None)
+            if handler.get_value() != -89:
+                print("Wrong default value for integer prop")
+                return False
+            if handler.type != int:
+                print("Wrong type for integer prop")
+            t_dict = handler.get_dict()
+            if t_dict["description"] != description_to_use:  # has no "name" key
+                print("Wrong name or description")
+                return False
+            return True
+
+        def test_set_and_get_val(blend_object_creator):
+            for prop_val in [1, "Hi", D.objects[0], [D.meshes[0], D.scenes[0]]]:
+                blend_obj = blend_object_creator()
+                if custom_properties.CustomPropertyHandler.just_set_val(blend_obj=blend_obj, prop_name="New custom prop", value=prop_val, test_for_success=True) != True:
+                    print("Setting value of type " + str(type(prop_val)) + " failed")
+                    return False
+                if custom_properties.CustomPropertyHandler.just_get_val(blend_obj=blend_obj, prop_name="New custom prop") != prop_val:
+                    print("just_get_val() method failed")
+                    return False
+
+            return True
+
+        create_scene = lambda: D.scenes.new(name="new scene for testing")
+        create_obj = lambda: test_helpers.create_subdiv_obj(subdivisions=2, type="MONKEY")
+        create_collection = lambda: D.collections.new(name="new Collection for testing")
+
+        for create_blend_obj in (create_obj, create_scene, create_collection):
+            for fun in (test_bool, test_float, test_integer, test_set_and_get_val):
+                if fun(create_blend_obj) != True:
+                    return False
+
+        return True
+
+    def test_drivers():
+        try:
+            from ..advanced import drivers
+            importlib.reload(drivers)
+            # modifiers = bpy.data.texts["modifiers.py"].as_module()
+        except:
+            print("COULDN'T IMPORT drivers")
+            return False
+
+        # different types of objects to add drivers to
+        objects_and_props = []
+        bpy.ops.object.camera_add(enter_editmode=False, align='VIEW', location=(0, 0, 0), rotation=(1.39626, 1.08593e-07, 0.0977383), scale=(1, 1, 1))
+        obj_camera = C.object
+        camera = obj_camera.data
+        objects_and_props += [(camera, (lambda: camera.lens), "lens")]
+
+        scene_new = D.scenes.new("new scene")
+        objects_and_props += [(scene_new, (lambda: scene_new.gravity[1]), "gravity", 1)]
+
+        obj_plane = test_helpers.create_subdiv_obj(subdivisions=0, type="PLANE")
+        mod_wave = obj_plane.modifiers.new(name="wave",type="WAVE")
+        objects_and_props += [(mod_wave, (lambda: mod_wave.show_viewport),"show_viewport")]
+
+        bpy.ops.object.light_add(type='SUN', align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
+        obj_sun = C.object
+        sun = obj_sun.data
+        obj_monkey = test_helpers.create_subdiv_obj(subdivisions=2, type="MONKEY")
+        obj_monkey["cust prop"] = 2.7
+        obj_monkey.update_tag()  # otherwise driver cannot access that custom property
+
+        for stuff in objects_and_props:
+            boss_obj = stuff[0]
+            fun_get_value = stuff[1]
+            data_path = stuff[2]
+            if len(stuff) == 4:
+                prop_index = stuff[3]
+                driver_helper = drivers.DriverHelper(boss_object=boss_obj, property_name=data_path, index=prop_index)
+            else:
+                driver_helper = drivers.DriverHelper(boss_object=boss_obj, property_name=data_path)
+            if len(driver_helper.driver.variables) != 0:
+                print("No variables should exist yet")
+                return False
+            if driver_helper.driver.expression != "":
+                print(driver_helper.driver.expression)
+                print("Expression should be empty.")
+                return False
+            var_normal = driver_helper.add_variable("new_variable")
+            if var_normal.name != "new_variable":
+                print("Wrong variable name")
+                return False
+            var_linked_normal = driver_helper.add_variable_linked_to_property(prop_owner=sun, property_name="energy")
+            var_linked_custom = driver_helper.add_variable_linked_to_property(prop_owner=obj_monkey, property_name="cust prop", is_custom_property=True)
+            driver_helper.driver.expression = var_linked_normal.name + " + " + var_linked_custom.name
+
+            driver_helper.get_variables()
+
+            # # is_valid returns False if a variable isn't set properly, but not if the driver expression is wrong.
+            # boss_obj.animation_data.drivers.update()
+            # boss_obj.update_tag()
+            # driver_helper.fcurve.update()
+            # D.worlds[0].update_tag()
+            # if driver_helper.driver.is_valid != False:
+            #     print("Driver should be invalid, but isn't")
+            #     print(boss_obj.name)
+            #     return False
+            # driver_helper.driver.variables.remove(var_normal)
+            # if driver_helper.driver.is_valid != True:
+            #     print("Driver should be valid, but isn't")
+            #     return False
+
+            if boss_obj == camera:
+                driver_helper.refresh_driver_value(context=C)
+                if round(fun_get_value(), 4) != round(obj_monkey["cust prop"] + sun.energy, 4):
+                    print(fun_get_value())
+                    print(obj_monkey["cust prop"] + sun.energy)
+                    print(driver_helper.driver.expression)
+                    print("Wrong end value!")
+                    print(boss_obj.name)
+                    return False
+
+        return True
+
+    def test_node_helper():
+        try:
+            from ..advanced import node_helper
+            importlib.reload(node_helper)
+            # modifiers = bpy.data.texts["modifiers.py"].as_module()
+        except:
+            print("COULDN'T IMPORT node_helper")
+            return False
+        #currently only tests geometry node modifer
+
+        obj_monkey = test_helpers.create_subdiv_obj(subdivisions=1, type="MONKEY")
+        mod_geo_node = obj_monkey.modifiers.new(name="Geometry Node modifier",type='NODES')
+        random_node_group = bpy.data.node_groups.new(name='Geometry Nodes Test', type='GeometryNodeTree')
+        for source in (None, mod_geo_node, random_node_group, mod_geo_node.node_group.name):
+            nhelper = node_helper.GeometryNodesModifierHandler(source=source, reset=False)
+            if type(nhelper.node_group) != bpy.types.GeometryNodeTree:
+                print("Node group wasn't identified correctly.")
+                print(type(nhelper.node_group))
+                return False
+
+        nhelper = node_helper.GeometryNodesModifierHandler(source=mod_geo_node, reset=True)
+        if len(nhelper.node_group.links) != 0:
+            print("Reset didn't work, there are links")
+            return False
+        if nhelper.main_input_node == None or nhelper.main_output_node == None:
+            print("Reset didn't work, no input/output node exists")
+            return False
+        
+        input_socket = nhelper.add_input(bl_socket_idname='NodeSocketBool', name="Some Input")
+        output_socket = nhelper.add_output(bl_socket_idname='NodeSocketFloat', name="Some output")
+        for socket in (input_socket, output_socket):
+            if issubclass(type(socket),bpy.types.NodeSocketInterface) == False:
+                print("Wrong type, expected NodeSocketInterface, got:")
+                print(type(socket))
+                return False
+        
+        if (input_socket.identifier in set(mod_geo_node.keys()) == False) or (output_socket.identifier+'3_attribute_name' in set(mod_geo_node.keys())==False) :
+            print("Problem with input/output socket on modifier")
+            return False
+        
+        node_transform = nhelper.add_node('GeometryNodeTransform')
+        if len(nhelper.node_group.nodes) != 3:
+            print("Wrong amount of nodes")
+            return False
+        
+        nhelper.connect_nodes(output_socket=nhelper.main_input_node.outputs["Some Input"], input_socket=node_transform.inputs["Rotation"])
+        link = node_transform.inputs["Rotation"].links[0]
+        if link.from_socket != nhelper.main_input_node.outputs[1]:
+            print("Wrong link took place")
+            return False
+
+        nhelper.clear_all_nodes()
+        if len(nhelper.node_group.nodes) != 0:
+            print("Clearing nodes failed")
+            return False
+        if nhelper.main_input_node != None or nhelper.main_output_node != None:
+            print("Main input/output nodes weren't cleared from instance")
+            return False
+
+        node_group_new = bpy.data.node_groups.new(name='Another Geometry Nodes Test', type='GeometryNodeTree')
+        nhelper_new = node_helper.GeometryNodesModifierHandler(source=node_group_new, reset=True)
+        nhelper_new.link_ng_to_modifier(mod_geo_node)
+
+        if mod_geo_node.node_group != node_group_new:
+            print("Using new node group for modifier failed")
+            return False
+
+        node_transfer_attr =  nhelper_new.add_node(node_type='GeometryNodeAttributeTransfer')
+        input_socket = node_helper.GeometryNodesModifierHandler.get_input_socket_by_identifier(node=node_transfer_attr,socket_identifier='Attribute_002')
+        for i in range(len(node_transfer_attr.inputs)):
+            if i == 3 and node_transfer_attr.inputs[i] != input_socket:
+                print("Wrong input socket from identifier")
+                return False
+            if i != 3 and node_transfer_attr.inputs[i] == input_socket:
+                print("Wrong input socket from identifier")
+                return False
+        node_capture_attr = nhelper_new.add_node(node_type='GeometryNodeCaptureAttribute')
+        output_socket = node_helper.GeometryNodesModifierHandler.get_output_socket_by_identifier(node=node_capture_attr, socket_identifier='Attribute_001')
+        for i in range(len(node_capture_attr.outputs)):
+            if i == 2 and node_capture_attr.outputs[i] != output_socket:
+                print("Wrong output socket from identifier")
+                return False
+            if i != 2 and node_capture_attr.outputs[i] == output_socket:
+                print("Wrong output socket from identifier")
+                return False
+
+        nhelper.deselect_all_nodes()
+        return True
+
     x = True
     # fun as in function, not the joy I haven't experienced since my first day at highschool
-    for fun in (test_select_objects, test_delete_object_and_mesh, test_tag_vertices, test_create_collection, test_create_real_mesh,
-                test_delete_verts_faces_edges, test_coordinateStuff, test_everything_key_frames, test_vertex_groups, test_shapekeys,
-                test_modifiers):
+    for fun in (
+            test_select_objects, test_delete_object_and_mesh, test_information_gathering, test_tag_vertices, test_create_collection, test_create_real_mesh,
+            test_delete_verts_faces_edges, test_coordinateStuff, test_everything_key_frames, test_vertex_groups, test_shapekeys,
+            test_modifiers, test_custom_properties, test_drivers,test_node_helper):
         try:
             if fun() == True:
                 None

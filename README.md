@@ -16,7 +16,14 @@ A collection of Blender Python functions and classes for frequent tasks a hobby 
 - **dealing with vertex groups** 
 - **dealing with shape keys**
 - **dealing with modifiers** (includes usage of the "bind" operator of Laplacian Deform, Surface Deform and Mesh Deform modifiers)
+- **getting certain information about objects at runtime**
 - some minor functions that help in testing
+- Some (limited) advanced stuff:
+    - **dealing with custom properties**
+    - **dealing with drivers**
+    - **dealing with (geometry) nodes**
+
+
 
 - more might follow
 
