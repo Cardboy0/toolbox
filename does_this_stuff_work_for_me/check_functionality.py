@@ -178,12 +178,15 @@ def run(context=None, start_message=""):
         bpy.ops.mesh.primitive_plane_add()
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.select_all(action='DESELECT')
-        test_function(lambda: select_objects.select_objects(C, [cube], True, None))
+        # change_area is set to False so that the default ("CONSOLE") is used. This is allowed because a warning exists in the function description.
+        test_function(change_area=False, fun=lambda: select_objects.select_objects(C, [cube], True, None))
 
         if C.active_object != cube:
             print(1)
             return False
-        test_function(lambda: select_objects.select_objects(C, [plane_one, plane_two], False, plane_two))
+
+        # change_area is set to False so that the default ("CONSOLE") is used. This is allowed because a warning exists in the function description.
+        test_function(change_area=False, fun=lambda: select_objects.select_objects(C, [plane_one, plane_two], False, plane_two))
 
         if C.active_object != plane_two or C.active_object != plane_two:
             print(C.view_layer.active.name)
@@ -293,8 +296,7 @@ def run(context=None, start_message=""):
                     test_helper.mess_around(switch_scenes=change_scenes)
 
                     # with original object data
-                    # change_area is set to False so that the default ("CONSOLE") is used. This is allowed because a warning exists in the function description.
-                    obj_copy = test_function(change_area=False, fun= lambda: select_objects.duplicate_object(obj=obj_orig, keep_mesh=True))
+                    obj_copy = test_function(lambda: select_objects.duplicate_object(obj=obj_orig, keep_mesh=True))
                     if obj_copy == obj_orig or obj_copy is obj_orig:
                         return False
                     if test_transforms(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
@@ -309,11 +311,10 @@ def run(context=None, start_message=""):
                         if obj_orig.data != obj_copy.data or (obj_orig.data is obj_copy.data) == False:
                             print("Empty problem")
                             return False
-                    test_helper.mess_around( switch_scenes=change_scenes, scenes_to_avoid=[orig_scene])
+                    test_helper.mess_around(switch_scenes=change_scenes, scenes_to_avoid=[orig_scene])
 
                     # with duplicate object data
-                    # change_area is set to False so that the default ("CONSOLE") is used. This is allowed because a warning exists in the function description.
-                    obj_copy = test_function(change_area=False, fun= lambda: select_objects.duplicate_object(obj=obj_orig, keep_mesh=False))
+                    obj_copy = test_function(lambda: select_objects.duplicate_object(obj=obj_orig, keep_mesh=False))
                     if obj_copy == obj_orig or obj_copy is obj_orig:
                         return False
                     if test_transforms(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
@@ -840,11 +841,11 @@ def run(context=None, start_message=""):
                 print(list(obj.material_slots))
                 print(list(obj.data.materials))
                 return False
-            new_mesh_without_mat = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+            new_mesh_without_mat = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
                 context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False, keep_materials=False))
             new_obj_without_mat = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
                 context=C, name="newObj", mesh=new_mesh_without_mat))
-            new_mesh_with_mat = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+            new_mesh_with_mat = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
                 context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False, keep_materials=True))
             new_obj_with_mat = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
                 context=C, name="newObj", mesh=new_mesh_with_mat))
@@ -871,7 +872,7 @@ def run(context=None, start_message=""):
             sk2.data[1].co = [1.3, 41, 2.7]  # coordinate of vertex #1
             sk2.data[3].co = [0, 1, 67]
             sk2.value = 1
-            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+            new_mesh = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
                 context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
             new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
                 context=C, name="newObj", mesh=new_mesh))
@@ -895,7 +896,7 @@ def run(context=None, start_message=""):
                 return False
             obj.data.vertices[0].groups[0].weight = 0.5
             for b in (True, False, True, False):  # test if keepVertexGroups parameter works as well
-                new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                new_mesh = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
                     context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=b))
                 new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
                     context=C, name="newObj", mesh=new_mesh))
@@ -918,7 +919,7 @@ def run(context=None, start_message=""):
             parent_obj.location = [1, 2, 3]
             if obj.parent != parent_obj:
                 return False
-            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+            new_mesh = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
                 context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
             new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
                 context=C, name="newObj", mesh=new_mesh))
@@ -940,9 +941,9 @@ def run(context=None, start_message=""):
             bpy.ops.object.constraint_add(type='COPY_LOCATION')
             new_constraint = obj.constraints[0]
             new_constraint.target = constrain_obj
-            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+            new_mesh = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
                 context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
-            new_obj = test_function( lambda: create_real_mesh.create_new_obj_for_mesh(
+            new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
                 context=C, name="newObj", mesh=new_mesh))
             select_objs([obj])
             bpy.ops.constraint.apply(
@@ -962,7 +963,7 @@ def run(context=None, start_message=""):
             obj.delta_rotation_euler = [9, 8, 0]
             obj.scale = [5, 6, 7]
             obj.delta_scale = [0.5, 0.2, 0.1]
-            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+            new_mesh = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
                 context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
             new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
                 context=C, name="newObj", mesh=new_mesh))
@@ -985,7 +986,7 @@ def run(context=None, start_message=""):
             # "cycles" seems to be standart property, so at least a length of 1
             original_amount = len(C.active_object.data.keys())
             bpy.ops.wm.properties_add(data_path="object.data")
-            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+            new_mesh = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
                 context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
             new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
                 context=C, name="newObj", mesh=new_mesh))
