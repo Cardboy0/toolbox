@@ -28,10 +28,10 @@ if __name__ == '__main__':  # makes sure this only happens when you run the scri
     # print(with_dots)
     __package__ = with_dots
 
-from . import (coordinates_stuff as __coordinates_stuff,
-               create_real_mesh as __create_real_mesh,
+from . import (coordinates_stuff as _coordinates_stuff,
+               create_real_mesh as _create_real_mesh,
                select_objects as _select_objects)
-for modu in (__create_real_mesh, __coordinates_stuff, _select_objects):
+for modu in (_create_real_mesh, _coordinates_stuff, _select_objects):
     importlib.reload(modu)
 
 #########################################################################################
@@ -52,147 +52,217 @@ for modu in (__create_real_mesh, __coordinates_stuff, _select_objects):
 # That's because this file is only supposed to be used for simple testing, and a few other reasons
 
 
-def create_subdiv_obj(subdivisions=0, type="PLANE"):
-    """Creates a primitive mesh object, optionally with subdvisions applied.
+class TestHelper():
 
-    Parameters
-    ----------
-    subdivisions : int
-        Amount of times you want the mesh to be suvdivided.
-    type : one of {"PLANE","CUBE","UV_SPHERE","ICO_SPHERE","CYLINDER","CONE","TORUS","MONKEY"}
-        The type of primitive Mesh you want to have created
+    __context: bpy.types.Context
+    __old_area_type: str
 
-    Returns
-    -------
-    bpy.types.Object
-        Created object
-    """
-    def raise_err():
-        raise Exception(str(type) + " not a valid value.")
-    possible_ops = {
-        "PLANE": bpy.ops.mesh.primitive_plane_add,
-        "CUBE": bpy.ops.mesh.primitive_cube_add,
-        "UV_SPHERE": bpy.ops.mesh.primitive_uv_sphere_add,
-        "ICO_SPHERE": bpy.ops.mesh.primitive_ico_sphere_add,
-        "CYLINDER": bpy.ops.mesh.primitive_cylinder_add,
-        "CONE": bpy.ops.mesh.primitive_cone_add,
-        "TORUS": bpy.ops.mesh.primitive_torus_add,
-        "MONKEY": bpy.ops.mesh.primitive_monkey_add,
+    def __init__(self, context):
+        self.__context = context
 
-    }
-    possible_ops.get(type, raise_err)()
-    obj = bpy.context.object
-    #mesh = obj.data
-    bpy.ops.object.mode_set(mode='EDIT')
-    for subdivs in range(subdivisions):
-        bpy.ops.mesh.subdivide()
-    bpy.ops.object.mode_set(mode='OBJECT')
-    return obj
+    def create_subdiv_obj(self, subdivisions=0, type="PLANE"):
+        """Creates a primitive mesh object, optionally with subdvisions applied.
 
+        Parameters
+        ----------
+        subdivisions : int
+            Amount of times you want the mesh to be suvdivided.
+        type : one of {"PLANE","CUBE","UV_SPHERE","ICO_SPHERE","CYLINDER","CONE","TORUS","MONKEY"}
+            The type of primitive Mesh you want to have created
 
-class ArmatureCreator():
-    obj_armature: bpy.types.Object
-    obj_monkey: bpy.types.Object
-    bone_1: bpy.types.Bone
-    bone_2: bpy.types.Bone
-    bone_3: bpy.types.Bone
-
-
-    def __init__(self) -> None:
-        """Creates a simple armature object with three bones total.
-        The bones are not connected, but they all influence the new monkey
+        Returns
+        -------
+        bpy.types.Object
+            Created object
         """
-        # https://blender.stackexchange.com/questions/51684/python-create-custom-armature-without-ops
-        def create_bone(armature, factor):
-            bpy.ops.object.mode_set(mode='EDIT')
-            bone = armature.edit_bones.new(name="bone")  # edit_bones only works in edit mode
-            #bad stuff happens when you try to use that variable after switching back to object mode
-            name = bone.name
-            bone.head = (1, factor * 1, factor * 1)
-            bone.tail = (factor * 2, factor * 2, factor * 2) 
-            bpy.ops.object.mode_set(mode='OBJECT')
-            return armature.bones.get(name)
-        bpy.ops.mesh.primitive_monkey_add()
-        monkey = bpy.context.object
-        monkey.scale.z = 3
-        bpy.ops.object.armature_add()
-        obj_armature = bpy.context.object
-        self.bone_1 = obj_armature.data.bones[0]  # one already exists by default
-        self.bone_2 = create_bone(armature=obj_armature.data, factor=1)
-        self.bone_3 = create_bone(armature=obj_armature.data, factor=-1)
-        _select_objects.select_objects(context=bpy.context, object_list=[monkey, obj_armature], deselect_others=True, active=obj_armature)
-        bpy.ops.object.parent_set(type='ARMATURE_AUTO')
-        self.obj_monkey = monkey
-        self.obj_armature = obj_armature
+        self.switch_area()
+        def raise_err():
+            raise Exception(str(type) + " not a valid value.")
+        possible_ops = {
+            "PLANE": bpy.ops.mesh.primitive_plane_add,
+            "CUBE": bpy.ops.mesh.primitive_cube_add,
+            "UV_SPHERE": bpy.ops.mesh.primitive_uv_sphere_add,
+            "ICO_SPHERE": bpy.ops.mesh.primitive_ico_sphere_add,
+            "CYLINDER": bpy.ops.mesh.primitive_cylinder_add,
+            "CONE": bpy.ops.mesh.primitive_cone_add,
+            "TORUS": bpy.ops.mesh.primitive_torus_add,
+            "MONKEY": bpy.ops.mesh.primitive_monkey_add,
+
+        }
+        possible_ops.get(type, raise_err)()
+        obj = self.__context.active_object
+        #mesh = obj.data
+        bpy.ops.object.mode_set(mode='EDIT')
+        for subdivs in range(subdivisions):
+            bpy.ops.mesh.subdivide()
+        bpy.ops.object.mode_set(mode='OBJECT')
+        self.reset_area()
+        return obj
 
 
-    def move_bones(self):
-        """Moves and rotates the bones to do what armatures usually do.
+    class ArmatureCreator():
+        obj_armature: bpy.types.Object
+        obj_monkey: bpy.types.Object
+        bone_1: bpy.types.Bone
+        bone_2: bpy.types.Bone
+        bone_3: bpy.types.Bone
+
+
+        def __init__(self) -> None:
+            """Creates a simple armature object with three bones total.
+            The bones are not connected, but they all influence the new monkey
+            """
+            # https://blender.stackexchange.com/questions/51684/python-create-custom-armature-without-ops
+            def create_bone(armature, factor):
+                bpy.ops.object.mode_set(mode='EDIT')
+                bone = armature.edit_bones.new(name="bone")  # edit_bones only works in edit mode
+                #bad stuff happens when you try to use that variable after switching back to object mode
+                name = bone.name
+                bone.head = (1, factor * 1, factor * 1)
+                bone.tail = (factor * 2, factor * 2, factor * 2) 
+                bpy.ops.object.mode_set(mode='OBJECT')
+                return armature.bones.get(name)
+            bpy.ops.mesh.primitive_monkey_add()
+            monkey = self.__context.active_object
+            monkey.scale.z = 3
+            bpy.ops.object.armature_add()
+            obj_armature = self.__context.active_object
+            self.bone_1 = obj_armature.data.bones[0]  # one already exists by default
+            self.bone_2 = create_bone(armature=obj_armature.data, factor=1)
+            self.bone_3 = create_bone(armature=obj_armature.data, factor=-1)
+            _select_objects.select_objects(context=self.__context, object_list=[monkey, obj_armature], deselect_others=True, active=obj_armature)
+            bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+            self.obj_monkey = monkey
+            self.obj_armature = obj_armature
+
+
+        def move_bones(self):
+            """Moves and rotates the bones to do what armatures usually do.
+            """
+            posebones = self.obj_armature.pose.bones
+            # bpy.ops.object.mode_set(mode='EDIT')
+            for bone in [self.bone_1, self.bone_2, self.bone_3]:
+                posebones[bone.name].rotation_mode = "XYZ" # for some reason that was quaternion by default for me
+            posebones[self.bone_1.name].location = (-1,-0.5,0)
+            posebones[self.bone_1.name].rotation_euler = (0.5,0.3,0.2)
+            posebones[self.bone_2.name].location = (1.2,0.9,10)
+            posebones[self.bone_2.name].rotation_euler=(9,9,9)
+            posebones[self.bone_3.name].location = (100,80,99)
+            posebones[self.bone_3.name].rotation_euler = (4,-4,0.01)
+            # bpy.ops.object.mode_set(mode='OBJECT')
+
+    def mess_around(self,switch_scenes=True, scenes_to_avoid=[]):
+        """If you generally just want to f*ck up your project to see if your functions still work when settings change.
+        Currently includes:
+        - Creating a new object (gets deleted again)
+        - Switches to Edit Mode at least once (returns to Object Mode at the end)
+        - deselecting all objects
+        - changing frames
+        - (optional) switching to another scene
+
+        Parameters
+        ----------
+        switch_scenes : bool
+            If True, your active scene will be switched. If no other scenes exist yet, a new one will be created. Note that to change scenes you can use "C.window.scene = yourScene"
+        scenes_to_avoid : bpy.types.Scene or list of scenes
+            Only matters is switch_scenes is set to True. These scenes will not be switched too. Always includes the current scene.
+
         """
-        posebones = self.obj_armature.pose.bones
-        # bpy.ops.object.mode_set(mode='EDIT')
-        for bone in [self.bone_1, self.bone_2, self.bone_3]:
-            posebones[bone.name].rotation_mode = "XYZ" # for some reason that was quaternion by default for me
-        posebones[self.bone_1.name].location = (-1,-0.5,0)
-        posebones[self.bone_1.name].rotation_euler = (0.5,0.3,0.2)
-        posebones[self.bone_2.name].location = (1.2,0.9,10)
-        posebones[self.bone_2.name].rotation_euler=(9,9,9)
-        posebones[self.bone_3.name].location = (100,80,99)
-        posebones[self.bone_3.name].rotation_euler = (4,-4,0.01)
-        # bpy.ops.object.mode_set(mode='OBJECT')
-
-def mess_around(switch_scenes=True, scenes_to_avoid=[]):
-    """If you generally just want to f*ck up your project to see if your functions still work when settings change.
-    Currently includes:
-    - Creating a new object (gets deleted again)
-    - Switches to Edit Mode at least once (returns to Object Mode at the end)
-    - deselecting all objects
-    - changing frames
-    - (optional) switching to another scene
-
-    Parameters
-    ----------
-    switch_scenes : bool
-        If True, your active scene will be switched. If no other scenes exist yet, a new one will be created. Note that to change scenes you can use "C.window.scene = yourScene"
-    scenes_to_avoid : bpy.types.Scene or list of scenes
-        Only matters is switch_scenes is set to True. These scenes will not be switched too. Always includes the current scene.
-
-    """
-    bpy.ops.mesh.primitive_cube_add()
-    new_obj = bpy.context.object
-    for selected_objs in bpy.context.selected_objects.copy():
-        if selected_objs != new_obj:
-            selected_objs.select_set(False)
-    new_obj.select_set(True)
-    bpy.context.view_layer.objects.active = new_obj
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.context.scene.frame_set(bpy.context.scene.frame_current + 8)
-    bpy.context.scene.frame_set(bpy.context.scene.frame_current - 4)
-    bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.context.view_layer.objects.active = new_obj
-    bpy.ops.object.delete(use_global=False)
-    # after deleting no object will be selected or active, so no mode can be set and will give us an error
-    if switch_scenes == True:
-        if type(scenes_to_avoid) != list:
-            scenes_to_avoid = [scenes_to_avoid]
-        current_scene = bpy.context.scene
-        scenes_to_avoid += [current_scene]
-        scenes_to_avoid = set(scenes_to_avoid)  # removing duplicate scenes
-        if len(bpy.data.scenes) == 1 or len(bpy.data.scenes) <= len(scenes_to_avoid):
-            bpy.ops.scene.new(type='NEW')
-        created = False
-        for scene in bpy.data.scenes:
-            if (scene in scenes_to_avoid) == False:
-                bpy.context.window.scene = scene
-                created = True
-                break
-        if created == False:
-            raise Exception(
-                "Something went wrong when trying to change scenes.")
+        self.switch_area()
         bpy.ops.mesh.primitive_cube_add()
+        new_obj = self.__context.active_object
+        for selected_objs in self.__context.selected_objects.copy():
+            if selected_objs != new_obj:
+                selected_objs.select_set(False)
+        new_obj.select_set(True)
+        self.__context.view_layer.objects.active = new_obj
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.object.mode_set(mode='OBJECT')
+        self.__context.scene.frame_set(self.__context.scene.frame_current + 8)
+        self.__context.scene.frame_set(self.__context.scene.frame_current - 4)
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.object.mode_set(mode='OBJECT')
+        self.__context.view_layer.objects.active = new_obj
         bpy.ops.object.delete(use_global=False)
+        # after deleting no object will be selected or active, so no mode can be set and will give us an error
+        if switch_scenes == True:
+            if type(scenes_to_avoid) != list:
+                scenes_to_avoid = [scenes_to_avoid]
+            current_scene = self.__context.scene
+            scenes_to_avoid += [current_scene]
+            scenes_to_avoid = set(scenes_to_avoid)  # removing duplicate scenes
+            if len(bpy.data.scenes) == 1 or len(bpy.data.scenes) <= len(scenes_to_avoid):
+                bpy.ops.scene.new(type='NEW')
+            created = False
+            for scene in bpy.data.scenes:
+                if (scene in scenes_to_avoid) == False:
+                    self.__context.window.scene = scene
+                    created = True
+                    break
+            if created == False:
+                raise Exception(
+                    "Something went wrong when trying to change scenes.")
+            bpy.ops.mesh.primitive_cube_add()
+            bpy.ops.object.delete(use_global=False)
+        self.reset_area()
+
+    def are_objs_the_same(self, obj1, obj2, frame="CURRENT", apply_transforms_obj1=True, apply_transforms_obj2=True,
+                          mute=True):
+        """Checks if two objects, after everything (such as modifiers) has been applied, are the same (at a single frame) by comparing each vertex coordinate.
+
+        Parameters
+        ----------
+        obj1 : bpy.types.Object
+            First object
+        obj2 : bpy.types.Object
+            The object that's supposed to be compared agains the first object
+        frame : str or int
+            The frame for which you want to compare the two objects, by default "CURRENT"
+        apply_transforms_obj1 : bool
+            Whether you want to apply any transformations or keep them for comparing, by default True
+        apply_transforms_obj2 : bool
+            Whether you want to apply any transformations or keep them for comparing, by default True
+        mute : bool
+            Dont print an errormessage with some detail when objs are not the same?
+        """
+        self.switch_area()
+        def error_message(messageStart="Comparison failed for", messageEnd=""):
+            if mute == False:
+                print(messageStart + " objects " + obj1.name +
+                    " and " + obj2.name + " " + messageEnd)
+
+        obj1_mesh_copy = _create_real_mesh.create_real_mesh_copy(
+            context=self.__context, obj=obj1, frame=frame, apply_transforms=apply_transforms_obj1)
+        obj2_mesh_copy = _create_real_mesh.create_real_mesh_copy(
+            context=self.__context, obj=obj2, frame=frame, apply_transforms=apply_transforms_obj2)
+        verts_obj1 = _coordinates_stuff.get_vertex_coordinates(mesh=obj1_mesh_copy)
+        verts_obj2 = _coordinates_stuff.get_vertex_coordinates(mesh=obj2_mesh_copy)
+
+        # don't need them anymore for what's left
+        bpy.data.meshes.remove(obj1_mesh_copy)
+        bpy.data.meshes.remove(obj2_mesh_copy)
+
+        if len(verts_obj1) != len(verts_obj2):
+            error_message(messageEnd="(Different amount of vertices)")
+            self.reset_area()
+            return False
+        for vertIndex in range(len(verts_obj1)):
+            v1 = verts_obj1[vertIndex]
+            v2 = verts_obj2[vertIndex]
+            if _coordinates_stuff.is_vector_close(vector1=v1, vector2=v2, ndigits=3) == False:
+                error_message(messageEnd="(Different vertices found:\nIndex=" +
+                            str(vertIndex) + "\nvert1 = " + str(v1) + "\nvert2 = " + str(v2))
+                self.reset_area()
+                return False
+        self.reset_area()
+        return True
+
+    def switch_area(self):
+        self.__old_area_type = self.__context.area.type
+        self.__context.area.type = "CONSOLE"
+
+    def reset_area(self):
+        self.__context.area.type = self.__old_area_type
 
 
 class Timing:
@@ -253,53 +323,4 @@ class Timing:
         return t
 
 
-def are_objs_the_same(context, obj1, obj2, frame="CURRENT", apply_transforms_obj1=True, apply_transforms_obj2=True, mute=True):
-    """Checks if two objects, after everything (such as modifiers) has been applied, are the same (at a single frame) by comparing each vertex coordinate.
 
-    Parameters
-    ----------
-    context : bpy.types.Context
-        probably bpy.context
-    obj1 : bpy.types.Object
-        First object
-    obj2 : bpy.types.Object
-        The object that's supposed to be compared agains the first object
-    frame : str or int
-        The frame for which you want to compare the two objects, by default "CURRENT"
-    apply_transforms_obj1 : bool
-        Whether you want to apply any transformations or keep them for comparing, by default True
-    apply_transforms_obj2 : bool
-        Whether you want to apply any transformations or keep them for comparing, by default True
-    mute : bool
-        Dont print an errormessage with some detail when objs are not the same?
-    """
-
-    def error_message(messageStart="Comparison failed for", messageEnd=""):
-        if mute == False:
-            print(messageStart + " objects " + obj1.name +
-                  " and " + obj2.name + " " + messageEnd)
-
-    obj1_mesh_copy = __create_real_mesh.create_real_mesh_copy(
-        context=context, obj=obj1, frame=frame, apply_transforms=apply_transforms_obj1)
-    obj2_mesh_copy = __create_real_mesh.create_real_mesh_copy(
-        context=context, obj=obj2, frame=frame, apply_transforms=apply_transforms_obj2)
-    verts_obj1 = __coordinates_stuff.get_vertex_coordinates(
-        context=context, mesh=obj1_mesh_copy)
-    verts_obj2 = __coordinates_stuff.get_vertex_coordinates(
-        context=context, mesh=obj2_mesh_copy)
-
-    # don't need them anymore for what's left
-    bpy.data.meshes.remove(obj1_mesh_copy)
-    bpy.data.meshes.remove(obj2_mesh_copy)
-
-    if len(verts_obj1) != len(verts_obj2):
-        error_message(messageEnd="(Different amount of vertices)")
-        return False
-    for vertIndex in range(len(verts_obj1)):
-        v1 = verts_obj1[vertIndex]
-        v2 = verts_obj2[vertIndex]
-        if __coordinates_stuff.is_vector_close(context=context, vector1=v1, vector2=v2, ndigits=3) == False:
-            error_message(messageEnd="(Different vertices found:\nIndex=" +
-                          str(vertIndex) + "\nvert1 = " + str(v1) + "\nvert2 = " + str(v2))
-            return False
-    return True

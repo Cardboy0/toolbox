@@ -2,6 +2,7 @@
 __pycache__
 personal\ notes.md
 toolbox.code-workspace
+.idea
 
 does_this_stuff_work_for_me/*
 

@@ -4,7 +4,7 @@
 
 # I apologize for the stroke you will have when trying to understand some of the logic I did here due to lacking documentation at points.
 
-def run(context=None):
+def run(context=None, start_message=""):
     import bpy
     import math
     import mathutils
@@ -55,10 +55,24 @@ def run(context=None):
 
     import_stuff()
 
+    orig_area_type = C.area.type
+
+    def test_function(fun, change_area=True):
+        """Tests a function but makes sure that the area type is of the original one unless not desired.
+        """
+        if change_area == True:
+            C.area.type = orig_area_type
+        result = fun()
+        if change_area == True:
+            C.area.type = "CONSOLE"
+        return result
+    C.area.type = "CONSOLE"
+
     C.scene.frame_set(100)
+    test_helper = test_helpers.TestHelper(context=C)
     bpy.ops.mesh.primitive_cube_add()
-    cube = C.object
-    print("\n\n" * 3 + "*" * 200 + "\nStart of new test run\n\n")
+    cube = C.active_object
+    print("\n\n" * 3 + "*" * 200 + "\nStart of new test run\n" + start_message + "\n\n")
 
     ##########################################
     ###############Some Classes###############
@@ -142,7 +156,7 @@ def run(context=None):
                 name="testImage292318", width=10, height=10)
             # right now has no data (None)
             bpy.ops.object.empty_add(type='IMAGE')
-            image_obj = C.object
+            image_obj = C.active_object
             image_obj.data = simple_image
 
     def test_select_objects():
@@ -154,26 +168,26 @@ def run(context=None):
         except:
             print("Couldn't import selectObjects!")
             return False
-        cube = test_helpers.create_subdiv_obj(subdivisions=0, type="CUBE")
+        cube = test_helper.create_subdiv_obj(subdivisions=0, type="CUBE")
         # selection depends on the scene
-        test_helpers.mess_around(switch_scenes=False)
+        test_helper.mess_around(switch_scenes=False)
         bpy.ops.mesh.primitive_plane_add()
-        plane_one = C.object
+        plane_one = C.active_object
         bpy.ops.mesh.primitive_plane_add()
-        plane_two = C.object
+        plane_two = C.active_object
         bpy.ops.mesh.primitive_plane_add()
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.select_all(action='DESELECT')
-        select_objects.select_objects(C, [cube], True, None)
-        if C.object != cube:
+        test_function(lambda: select_objects.select_objects(C, [cube], True, None))
+
+        if C.active_object != cube:
             print(1)
             return False
-        select_objects.select_objects(
-            C, [plane_one, plane_two], False, plane_two)
+        test_function(lambda: select_objects.select_objects(C, [plane_one, plane_two], False, plane_two))
 
-        if C.object != plane_two or C.active_object != plane_two:
+        if C.active_object != plane_two or C.active_object != plane_two:
             print(C.view_layer.active.name)
-            print(C.object.name)
+            print(C.active_object.name)
             print(C.active_object.name)
             print(2)
             return False
@@ -249,8 +263,7 @@ def run(context=None):
         orig_scene = bpy.context.scene
         mods = ['WAVE', 'SMOOTH', 'SUBSURF']
         cons = ['COPY_ROTATION', 'STRETCH_TO', 'TRANSFORM']
-        general_parent = test_helpers.create_subdiv_obj(
-            subdivisions=0, type="PLANE")
+        general_parent = test_helper.create_subdiv_obj(subdivisions=0, type="PLANE")
 
         for change_scenes in (False, True):
             for object_type in AllObjectTypes.get_all_keys():
@@ -262,7 +275,7 @@ def run(context=None):
                     if object_type != "Empty":
                         current_datas = list(data_collection)
                     fun()
-                    obj_orig = C.object
+                    obj_orig = C.active_object
                     if obj_orig in current_objs:
                         print("Didn't get the correct object, sorry.")
                         return False
@@ -277,10 +290,11 @@ def run(context=None):
                         for constraintname in cons:
                             obj_orig.constraints.new(constraintname)
 
-                    test_helpers.mess_around(switch_scenes=change_scenes)
+                    test_helper.mess_around(switch_scenes=change_scenes)
 
                     # with original object data
-                    obj_copy = select_objects.duplicate_object(obj=obj_orig, keep_mesh=True)
+                    # change_area is set to False so that the default ("CONSOLE") is used. This is allowed because a warning exists in the function description.
+                    obj_copy = test_function(change_area=False, fun= lambda: select_objects.duplicate_object(obj=obj_orig, keep_mesh=True))
                     if obj_copy == obj_orig or obj_copy is obj_orig:
                         return False
                     if test_transforms(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
@@ -295,12 +309,11 @@ def run(context=None):
                         if obj_orig.data != obj_copy.data or (obj_orig.data is obj_copy.data) == False:
                             print("Empty problem")
                             return False
-
-                    test_helpers.mess_around(
-                        switch_scenes=change_scenes, scenes_to_avoid=[orig_scene])
+                    test_helper.mess_around( switch_scenes=change_scenes, scenes_to_avoid=[orig_scene])
 
                     # with duplicate object data
-                    obj_copy = select_objects.duplicate_object(obj=obj_orig, keep_mesh=False)
+                    # change_area is set to False so that the default ("CONSOLE") is used. This is allowed because a warning exists in the function description.
+                    obj_copy = test_function(change_area=False, fun= lambda: select_objects.duplicate_object(obj=obj_orig, keep_mesh=False))
                     if obj_copy == obj_orig or obj_copy is obj_orig:
                         return False
                     if test_transforms(obj_orig=obj_orig, obj_dupl=obj_copy) != True:
@@ -330,7 +343,7 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT deleteStuff")
             return False
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
 
         def create_image():
             # Image creation requires us to first create a new image and then assign that to an empty object
@@ -339,7 +352,7 @@ def run(context=None):
                 name="testImage292318", width=10, height=10)
             # right now has no data (None)
             bpy.ops.object.empty_add(type='IMAGE')
-            image_obj = C.object
+            image_obj = C.active_object
             image_obj.data = simple_image
 
         o = bpy.ops
@@ -406,9 +419,9 @@ def run(context=None):
             if len(operators_to_run) == 0:
                 raise Exception("operator list is empty, aborting test...")
             for op in operators_to_run:
-                old_obj = C.object
+                old_obj = C.active_object
                 op()
-                new_obj = C.object
+                new_obj = C.active_object
                 if old_obj == new_obj:
                     raise Exception(
                         "object creation failed, aborting test...\n" + op.__name__)
@@ -418,21 +431,21 @@ def run(context=None):
                 if collection_to_check.find(name) == -1:
                     raise Exception(
                         "object creation failed, aborting test...\n" + op.__name__)
-                test_helpers.mess_around(switch_scenes=True)
-                delete_stuff.delete_object_together_with_data(obj=new_obj)
+                test_helper.mess_around(switch_scenes=True)
+                test_function(lambda: delete_stuff.delete_object_together_with_data(obj=new_obj))
                 # means data object still exists
                 if collection_to_check.find(name) != -1:
                     return False
 
         # doing the seperate test for empties
         for op in empties:
-            old_obj = C.object
+            old_obj = C.active_object
             op()
-            new_obj = C.object
+            new_obj = C.active_object
             if old_obj == new_obj or new_obj.data != None:
                 raise Exception(
                     "object creation failed, aborting test...\n" + op.__name__)
-            delete_stuff.delete_object_together_with_data(obj=new_obj)
+            test_function(lambda: delete_stuff.delete_object_together_with_data(obj=new_obj))
             # there is no result to check here, the only thing that can go wrong is that the object itself isn't deleted or an exception happens
 
         current_objs = set(D.objects)
@@ -504,24 +517,24 @@ def run(context=None):
             except:
                 print("'" + expected + "' no longer is a valid value, update " + test_information_gathering.__name__)
                 return False
-            result = information_gathering.get_string_type(class_type, capitalized=True)
+            result = test_function(lambda: information_gathering.get_string_type(class_type, capitalized=True))
             if result != expected:
                 print("Unexpected result: " + expected + " vs " + result)
                 return False
         # test not with a type but actual object
         mesh = bpy.data.meshes.new("my mesh")
-        if information_gathering.get_string_type(mesh, capitalized=True) != "MESH":
+        if test_function(lambda: information_gathering.get_string_type(mesh, capitalized=True)) != "MESH":
             print("Mesh identification failed")
             return False
         # test with a subtype of a main type
         o.object.light_add(type='POINT')
-        point_light = C.object.data
+        point_light = C.active_object.data
         if type(point_light) != bpy.types.PointLight:
             print("point light creation failed")
             return False
-        if information_gathering.get_string_type(point_light, capitalized=True) != "LIGHT":
+        if test_function(lambda: information_gathering.get_string_type(point_light, capitalized=True)) != "LIGHT":
             print("Point Light identification failed")
-            print(information_gathering.get_string_type(point_light, capitalized=True))
+            print(test_function(lambda: information_gathering.get_string_type(point_light, capitalized=True)))
             return False
 
         return True
@@ -569,7 +582,7 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT COLLECTIONS.py")
             return False
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
         orig_scene = C.scene
         # delete pre-existing test-results
         delete_collections = ["coll_apple", "coll_banana",
@@ -587,40 +600,40 @@ def run(context=None):
         # create two new scenes
         bpy.ops.scene.new(type='NEW')
         bpy.ops.scene.new(type='NEW')
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
         # we aren't even IN the original scene when we do this stuff
         # that's how good this test is
         bpy.ops.mesh.primitive_ico_sphere_add()
-        obj1 = C.object
+        obj1 = C.active_object
         obj1.name = "obj1"
         bpy.ops.mesh.primitive_ico_sphere_add()
-        obj2 = C.object
+        obj2 = C.active_object
         obj2.name = "obj2"
 
-        coll_apple = collectionz.create_collection(
-            C, "coll_apple", orig_scene.collection)
-        coll_banana = collectionz.create_collection(
-            C, "coll_banana", orig_scene.collection)
+        coll_apple = test_function(lambda: collectionz.create_collection(
+            C, "coll_apple", orig_scene.collection))
+        coll_banana = test_function(lambda: collectionz.create_collection(
+            C, "coll_banana", orig_scene.collection))
         # should only exist in current (wrong) scene
-        coll_xxxx = collectionz.create_collection(C, "coll_xxxx", "MASTER")
-        coll_cherry = collectionz.create_collection(C, "coll_cherry", "MASTER")
+        coll_xxxx = test_function(lambda: collectionz.create_collection(C, "coll_xxxx", "MASTER"))
+        coll_cherry = test_function(lambda: collectionz.create_collection(C, "coll_cherry", "MASTER"))
 
-        collectionz.link_collection_to_collections(coll_cherry, orig_scene.collection, keep_links=False)
+        test_function(lambda: collectionz.link_collection_to_collections(coll_cherry, orig_scene.collection, keep_links=False))
 
-        coll_dewberry = collectionz.create_collection(
-            C, "coll_dewberry", orig_scene.collection)
-        coll_blueberry = collectionz.create_collection(
-            C, "coll_blueberry", coll_dewberry)
-        coll_babaco = collectionz.create_collection(
-            C, "coll_babaco", coll_banana)
+        coll_dewberry = test_function(lambda: collectionz.create_collection(
+            C, "coll_dewberry", orig_scene.collection))
+        coll_blueberry = test_function(lambda: collectionz.create_collection(
+            C, "coll_blueberry", coll_dewberry))
+        coll_babaco = test_function(lambda: collectionz.create_collection(
+            C, "coll_babaco", coll_banana))
 
-        collectionz.link_collection_to_collections(coll_blueberry, [coll_dewberry, coll_banana], keep_links=False)
-        collectionz.link_collection_to_collections(coll_blueberry, coll_apple, keep_links=True)
+        test_function(lambda: collectionz.link_collection_to_collections(coll_blueberry, [coll_dewberry, coll_banana], keep_links=False))
+        test_function(lambda: collectionz.link_collection_to_collections(coll_blueberry, coll_apple, keep_links=True))
 
-        collectionz.link_object_to_collections(obj1, [coll_apple, coll_dewberry], keep_links=False)
-        collectionz.link_object_to_collections(obj2, [coll_apple, coll_dewberry], keep_links=False)
-        collectionz.link_object_to_collections(obj1, [coll_babaco, coll_cherry], keep_links=False)
-        collectionz.link_object_to_collections(obj2, [coll_babaco, coll_cherry], keep_links=True)
+        test_function(lambda: collectionz.link_object_to_collections(obj1, [coll_apple, coll_dewberry], keep_links=False))
+        test_function(lambda: collectionz.link_object_to_collections(obj2, [coll_apple, coll_dewberry], keep_links=False))
+        test_function(lambda: collectionz.link_object_to_collections(obj1, [coll_babaco, coll_cherry], keep_links=False))
+        test_function(lambda: collectionz.link_object_to_collections(obj2, [coll_babaco, coll_cherry], keep_links=True))
 
         master_coll = orig_scene.collection  # of the current scene
 
@@ -677,8 +690,8 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT tagVertices")
             return False
-        test_helpers.mess_around(switch_scenes=True)
-        obj = test_helpers.create_subdiv_obj(subdivisions=2, type="PLANE")
+        test_helper.mess_around(switch_scenes=True)
+        obj = test_helper.create_subdiv_obj(subdivisions=2, type="PLANE")
         mesh = obj.data
         # preparing is a bool value that tracks if the preparations for the actual methods to test actually all went as planned
         # the plane should now have 25 vertices total
@@ -689,7 +702,7 @@ def run(context=None):
             dict_coords[i] = mesh.vertices[i].co.copy()
         # we will later identify vertices by their coordinates as comparison
 
-        result_dict = tag_vertices.TagVertices.tag(mesh, "test", verts_to_tag)
+        result_dict = test_function(lambda: tag_vertices.TagVertices.tag(mesh, "test", verts_to_tag))
 
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='DESELECT')
@@ -705,7 +718,7 @@ def run(context=None):
         # print(len(mesh.vertices))
         # only 18 vertices should exist now
 
-        test_helpers.mess_around(switch_scenes=True)  # very important
+        test_helper.mess_around(switch_scenes=True)  # very important
 
         comparison_dict = {}  # oldIndex is which newIndex?
         for i in range(25):
@@ -725,8 +738,8 @@ def run(context=None):
 
         # print(comparisonDict)
 
-        tag_result_list = tag_vertices.TagVertices.identify_verts(mesh, result_dict["LAYERNAME"],
-                                                                  result_dict["LAYERVALUES"])
+        tag_result_list = test_function(lambda: tag_vertices.TagVertices.identify_verts(mesh, result_dict["LAYERNAME"],
+                                                                                        result_dict["LAYERVALUES"]))
 
         if preparing == False:
             print("preparing for vertex tagging didnt work as planned")
@@ -747,8 +760,8 @@ def run(context=None):
 
         # everything is fine
         # bonus: test if datalayer is deletable
-        tag_vertices.TagVertices.remove_layer(mesh, result_dict["LAYERNAME"])
-        test_helpers.mess_around(switch_scenes=True)
+        test_function(lambda: tag_vertices.TagVertices.remove_layer(mesh, result_dict["LAYERNAME"]))
+        test_helper.mess_around(switch_scenes=True)
         if len(mesh.vertex_layers_int) != 0:
             print("data layer removal didn't work")
             return False
@@ -774,8 +787,8 @@ def run(context=None):
                 - vertex groups
                 - parents
                 - constraints
-                - UV layers             - TODO not yet implemented (C.object.data.uv_layers)
-                - vertex colors         - TODO not yet implemented (C.object.data.vertex_colors)
+                - UV layers             - TODO not yet implemented (C.active_object.data.uv_layers)
+                - vertex colors         - TODO not yet implemented (C.active_object.data.vertex_colors)
                 - normals               - TODO not yet implemented
                 - transformations     
                 - custom properties
@@ -789,6 +802,10 @@ def run(context=None):
                 2. Does the result mesh look like the original one with that property?
                     3. By comparing the coordinates per vertex index we already can be sure that vertex indices didn't change
 
+        Additional note:
+            All calls to create_real_mesh.create_real_mesh_copy() are done with the default context.area.type of this whole test function ("CONSOLE").
+            This is allowed because the function has a warning about using other area types.
+
         """
         def is_vector_close(v1, v2):
             length = (v1 - v2).length
@@ -796,9 +813,12 @@ def run(context=None):
 
         def are_same_mesh(mesh1, mesh2):
             if len(mesh1.vertices) != len(mesh2.vertices):
+                print(str(len(mesh1.vertices)) + " vs " + str(len(mesh2.vertices)) + " vertices detected")
                 return False
             for (v1, v2) in zip(mesh1.vertices, mesh2.vertices):
                 if is_vector_close(v1.co, v2.co) == False:
+                    print(v1.co)
+                    print(v2.co)
                     return False
             return True
 
@@ -809,7 +829,7 @@ def run(context=None):
                 obj.select_set(True)
             C.view_layer.objects.active = objs[0]
 
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
 
         def check_materials(obj):
             select_objs([obj])
@@ -820,14 +840,14 @@ def run(context=None):
                 print(list(obj.material_slots))
                 print(list(obj.data.materials))
                 return False
-            new_mesh_without_mat = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False, keep_materials=False)
-            new_obj_without_mat = create_real_mesh.create_new_obj_for_mesh(
-                context=C, name="newObj", mesh=new_mesh_without_mat)
-            new_mesh_with_mat = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False, keep_materials=True)
-            new_obj_with_mat = create_real_mesh.create_new_obj_for_mesh(
-                context=C, name="newObj", mesh=new_mesh_with_mat)
+            new_mesh_without_mat = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False, keep_materials=False))
+            new_obj_without_mat = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh_without_mat))
+            new_mesh_with_mat = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False, keep_materials=True))
+            new_obj_with_mat = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh_with_mat))
 
             if len(new_obj_without_mat.material_slots) != 0 or len(new_mesh_without_mat.materials) != 0:
                 return False
@@ -851,12 +871,12 @@ def run(context=None):
             sk2.data[1].co = [1.3, 41, 2.7]  # coordinate of vertex #1
             sk2.data[3].co = [0, 1, 67]
             sk2.value = 1
-            new_mesh = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
-            new_obj = create_real_mesh.create_new_obj_for_mesh(
-                context=C, name="newObj", mesh=new_mesh)
+            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
+            new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh))
             select_objs([obj])
-            C.object.active_shape_key_index = 0  # index of BasisSK
+            C.active_object.active_shape_key_index = 0  # index of BasisSK
             bpy.ops.object.shape_key_remove(all=False)
             bpy.ops.object.shape_key_remove(all=False)
             # both shapekeys removed, but no obj shape = shape of sk2
@@ -875,10 +895,10 @@ def run(context=None):
                 return False
             obj.data.vertices[0].groups[0].weight = 0.5
             for b in (True, False, True, False):  # test if keepVertexGroups parameter works as well
-                new_mesh = create_real_mesh.create_real_mesh_copy(
-                    context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=b)
-                new_obj = create_real_mesh.create_new_obj_for_mesh(
-                    context=C, name="newObj", mesh=new_mesh)
+                new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                    context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=b))
+                new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
+                    context=C, name="newObj", mesh=new_mesh))
                 if (not (len(new_mesh.vertices[0].groups) == 0 and len(new_obj.vertex_groups) == 0)) == (not b):
                     print("B")
                     return False
@@ -891,17 +911,17 @@ def run(context=None):
             return True
 
         def check_parents(obj):
-            parent_obj = test_helpers.create_subdiv_obj(
+            parent_obj = test_helper.create_subdiv_obj(
                 subdivisions=0, type="PLANE")
             select_objs([parent_obj, obj])
             bpy.ops.object.parent_set(type='OBJECT', keep_transform=False)
             parent_obj.location = [1, 2, 3]
             if obj.parent != parent_obj:
                 return False
-            new_mesh = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
-            new_obj = create_real_mesh.create_new_obj_for_mesh(
-                context=C, name="newObj", mesh=new_mesh)
+            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
+            new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh))
             if new_obj.parent != None:
                 return False
             select_objs([obj])
@@ -913,17 +933,17 @@ def run(context=None):
             return True
 
         def check_constraints(obj):
-            constrain_obj = test_helpers.create_subdiv_obj(
+            constrain_obj = test_helper.create_subdiv_obj(
                 subdivisions=0, type="CUBE")
             constrain_obj.location = [2, 3, 4]
             select_objs([obj])
             bpy.ops.object.constraint_add(type='COPY_LOCATION')
             new_constraint = obj.constraints[0]
             new_constraint.target = constrain_obj
-            new_mesh = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
-            new_obj = create_real_mesh.create_new_obj_for_mesh(
-                context=C, name="newObj", mesh=new_mesh)
+            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
+            new_obj = test_function( lambda: create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh))
             select_objs([obj])
             bpy.ops.constraint.apply(
                 constraint=new_constraint.name, owner='OBJECT')
@@ -942,10 +962,10 @@ def run(context=None):
             obj.delta_rotation_euler = [9, 8, 0]
             obj.scale = [5, 6, 7]
             obj.delta_scale = [0.5, 0.2, 0.1]
-            new_mesh = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
-            new_obj = create_real_mesh.create_new_obj_for_mesh(
-                context=C, name="newObj", mesh=new_mesh)
+            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
+            new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh))
             select_objs([obj])
             bpy.ops.object.transforms_to_deltas(mode='ALL')
             obj.location = obj.delta_location.copy()
@@ -963,19 +983,19 @@ def run(context=None):
 
         def check_custom_properties(obj):
             # "cycles" seems to be standart property, so at least a length of 1
-            original_amount = len(C.object.data.keys())
+            original_amount = len(C.active_object.data.keys())
             bpy.ops.wm.properties_add(data_path="object.data")
-            new_mesh = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False)
-            new_obj = create_real_mesh.create_new_obj_for_mesh(
-                context=C, name="newObj", mesh=new_mesh)
+            new_mesh = test_function(change_area=False,fun= lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, frame="CURRENT", apply_transforms=True, keep_vertex_groups=False))
+            new_obj = test_function(lambda: create_real_mesh.create_new_obj_for_mesh(
+                context=C, name="newObj", mesh=new_mesh))
             if len(new_mesh.keys()) != original_amount:
                 return False
             return True
 
         for func in (check_materials, check_textures, check_shape_keys, check_vertex_groups, check_parents, check_constraints, check_transformations, check_custom_properties):
-            test_helpers.mess_around(switch_scenes=False)
-            obj = test_helpers.create_subdiv_obj(subdivisions=3, type="CUBE")
+            test_helper.mess_around(switch_scenes=False)
+            obj = test_helper.create_subdiv_obj(subdivisions=3, type="CUBE")
             obj.location = [0, 0, 0]
             obj.rotation_euler = [0, 0, 0]
             obj.scale = [1, 1, 1]
@@ -997,10 +1017,10 @@ def run(context=None):
             return False
 
         def new_plane():
-            obj = test_helpers.create_subdiv_obj(subdivisions=3, type="PLANE")
+            obj = test_helper.create_subdiv_obj(subdivisions=3, type="PLANE")
             obj.name = "testDeletionPlane_1"
             mesh = obj.data
-            test_helpers.mess_around(switch_scenes=True)
+            test_helper.mess_around(switch_scenes=True)
             return mesh
 
         # test if vectors are approx. the same while allowing some precision offset
@@ -1067,7 +1087,7 @@ def run(context=None):
             "verts": total_verts - 8, "edges": total_edges - 24, "faces": total_faces - 18}}
 
         for specific_dict in [vert_information_ONE, edge_information_ONE, edge_information_TWO, face_information_ONE, face_information_TWO]:
-            test_helpers.mess_around(switch_scenes=True)
+            test_helper.mess_around(switch_scenes=True)
             mesh = new_plane()
             # getting the indices of the elements
             indices = []
@@ -1081,9 +1101,9 @@ def run(context=None):
                 elif specific_dict["type"] == "FACE":
                     indices.append(find_face_from_coordinates(something, mesh))
 
-            delete_stuff.delete_verts_faces_edges(mesh, indices, specific_dict["type"],
-                                                  specific_dict["deleteChildElements"])
-            test_helpers.mess_around(switch_scenes=True)
+            test_function(lambda: delete_stuff.delete_verts_faces_edges(mesh, indices, specific_dict["type"],
+                                                                        specific_dict["deleteChildElements"]))
+            test_helper.mess_around(switch_scenes=True)
 
             if len(mesh.vertices) != specific_dict["expectedResults"]["verts"] or len(mesh.edges) != specific_dict["expectedResults"]["edges"] or len(mesh.polygons) != specific_dict["expectedResults"]["faces"]:
                 print("\nError: see data below")
@@ -1125,12 +1145,12 @@ def run(context=None):
             print("COULDN'T IMPORT coordinatesStuff")
             print("Exception message:\n" + str(exception))
             return False
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
         bpy.ops.mesh.primitive_plane_add()
-        obj = C.object
+        obj = C.active_object
         mesh = obj.data
-        coordinates = coordinates_stuff.get_vertex_coordinates(mesh, [1, 3])
-        if coordinates_stuff.is_vector_close(coordinates[1], coordinates[3], 6) == True:
+        coordinates = test_function(lambda: coordinates_stuff.get_vertex_coordinates(mesh, [1, 3]))
+        if test_function(lambda: coordinates_stuff.is_vector_close(coordinates[1], coordinates[3], 6)) == True:
             return False
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.select_all(action='SELECT')
@@ -1141,11 +1161,11 @@ def run(context=None):
         bpy.ops.transform.resize(value=(0.001, 0.001, 0.001), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True,
                                  use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
         bpy.ops.object.mode_set(mode='OBJECT')
-        coordinates = coordinates_stuff.get_vertex_coordinates(mesh, "ALL")
+        coordinates = test_function(lambda: coordinates_stuff.get_vertex_coordinates(mesh, "ALL"))
         # after resizing, two vertices of the plane (if not diagonal) should have a distance of 0.002 meters
-        if coordinates_stuff.is_vector_close(coordinates[1], coordinates[3],
-                                             6) == True or coordinates_stuff.is_vector_close(coordinates[1],
-                                                                                             coordinates[3], 2) == False:
+        if test_function(lambda: coordinates_stuff.is_vector_close(coordinates[1], coordinates[3],
+                                                                   6)) == True or test_function(lambda: coordinates_stuff.is_vector_close(coordinates[1],
+                                                                                                                                          coordinates[3], 2)) == False:
             return False
 
         try:
@@ -1159,9 +1179,9 @@ def run(context=None):
             return False
 
         # Testing the rotation handler class
-        Rot_Handler = coordinates_stuff.RotationHandling
+        Rot_Handler = test_function(lambda: coordinates_stuff.RotationHandling)
 
-        obj_suzanne_basic = test_helpers.create_subdiv_obj(
+        obj_suzanne_basic = test_helper.create_subdiv_obj(
             0, "MONKEY")  # without any rotations
 
         different_rotations = {"ZXY": ("rotation_euler", mathutils.Euler((1, 5, 2), "ZXY"), False),
@@ -1180,7 +1200,7 @@ def run(context=None):
                 special_axis_angle = vector_name_and_values[2]
                 # requires special handling because otherwise exceptions will arise
 
-                obj_suzanne_comparison = test_helpers.create_subdiv_obj(
+                obj_suzanne_comparison = test_helper.create_subdiv_obj(
                     0, "MONKEY")
                 obj_suzanne_comparison.rotation_mode = rotation_mode
                 if special_axis_angle == False:
@@ -1189,7 +1209,7 @@ def run(context=None):
                     setattr(obj_suzanne_comparison,
                             "rotation_axis_angle", (9, 5, 7, 1))
 
-                if test_helpers.are_objs_the_same(context=C, obj1=obj_suzanne_basic, obj2=obj_suzanne_comparison, mute=True) == True:
+                if test_helper.are_objs_the_same(obj1=obj_suzanne_basic, obj2=obj_suzanne_comparison, mute=True) == True:
                     # if hasSameTransformations(objSuzanneBasic, objSuzanneComparison) == True:
                     print("x")
                     return False
@@ -1198,26 +1218,28 @@ def run(context=None):
                     new_attr_name = vector_name_and_values[0]
                     new_vector = vector_name_and_values[1]
 
-                    obj_suzanne_with_converted_rotation = test_helpers.create_subdiv_obj(
+                    obj_suzanne_with_converted_rotation = test_helper.create_subdiv_obj(
                         0, "MONKEY")
                     obj_suzanne_with_converted_rotation.rotation_mode = rotation_mode_inner
 
-                    if test_helpers.are_objs_the_same(context=C, obj1=obj_suzanne_comparison, obj2=obj_suzanne_with_converted_rotation, mute=True) == True:
+                    if test_helper.are_objs_the_same(obj1=obj_suzanne_comparison,
+                                                     obj2=obj_suzanne_with_converted_rotation, mute=True) == True:
                         return False
 
-                    rot_handler = Rot_Handler()
-                    rot_handler.set_rotation_type_of_source_vector(r_vector)
-                    rot_handler.set_rotation_type_of_target_vector(new_vector)
+                    rot_handler = test_function(lambda: Rot_Handler())
+                    test_function(lambda: rot_handler.set_rotation_type_of_source_vector(r_vector))
+                    test_function(lambda: rot_handler.set_rotation_type_of_target_vector(new_vector))
                     if i == False and special_axis_angle == False:
                         # important especially in the context of axis_angle, because we supply a tuple but the object will have a bpy_float array instead
                         real_r_vector = getattr(
                             obj_suzanne_comparison, attr_name)
                     else:
                         real_r_vector = r_vector
-                    converted_vector = rot_handler.convert_rotation_vector_to_target(real_r_vector)
+                    converted_vector = test_function(lambda: rot_handler.convert_rotation_vector_to_target(real_r_vector))
                     setattr(obj_suzanne_with_converted_rotation,
                             new_attr_name, converted_vector)
-                    if test_helpers.are_objs_the_same(context=C, obj1=obj_suzanne_comparison, obj2=obj_suzanne_with_converted_rotation, mute=False) == False:
+                    if test_helper.are_objs_the_same(obj1=obj_suzanne_comparison,
+                                                     obj2=obj_suzanne_with_converted_rotation, mute=False) == False:
                         return False
                     D.objects.remove(obj_suzanne_with_converted_rotation)
 
@@ -1238,7 +1260,7 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT everythingKeyFrames")
             return False
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
         frame = 199
         C.scene.frame_set(frame)
 
@@ -1247,14 +1269,14 @@ def run(context=None):
         # 3. Check if values for object actually change at specified frames
 
         bpy.ops.mesh.primitive_cube_add()
-        obj = C.object
+        obj = C.active_object
         orig_locations = [obj.location.x, obj.location.y]
         # [0,1] are the indices of x and y in vectors
         for (list_or_dict, axis) in zip([[frame - 8, 0.5555, frame + 8, 1, frame - 12, 0], {frame - 8: 0.5555, frame + 8: 1, frame - 12: 0}], [0, 1]):
 
-            action = everything_key_frames.get_or_create_action(obj)
+            action = test_function(lambda: everything_key_frames.get_or_create_action(obj))
             fcurve = action.fcurves.new("location", index=axis)
-            everything_key_frames.create_key_frames_fast(fcurve, list_or_dict)
+            test_function(lambda: everything_key_frames.create_key_frames_fast(fcurve, list_or_dict))
             for (changed_frame, value) in zip([frame - 8, frame + 8, frame - 12], [0.5555, 1, 0]):
                 C.scene.frame_set(changed_frame)
                 current_location = round(obj.location[axis], 5)
@@ -1274,7 +1296,7 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT vertexGroups")
             return False
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
         """
         - Create 3 lists/dictionaries:
             1. list_uniform: Contains a bunch of vertex indices that are supposed to get a uniformal weight in the VG
@@ -1322,37 +1344,37 @@ def run(context=None):
             return list(intersections)
 
         def remove_invalid_indices(list1):
-            return list(vertex_groups.validate_vert_indices_for_vg(vertex_group_or_mesh=obj.data, vert_indices=list1,
-                                                                   return_type="set"))
+            return list(test_function(lambda: vertex_groups.validate_vert_indices_for_vg(vertex_group_or_mesh=obj.data, vert_indices=list1,
+                                                                                         return_type="set")))
 
-        obj = test_helpers.create_subdiv_obj(subdivisions=3, type="PLANE")
+        obj = test_helper.create_subdiv_obj(subdivisions=3, type="PLANE")
         # just to remove the selection and active status from the plane
-        test_helpers.create_subdiv_obj(subdivisions=0, type="CUBE")
-        if C.object == obj or obj.select_get() == True:
+        test_helper.create_subdiv_obj(subdivisions=0, type="CUBE")
+        if C.active_object == obj or obj.select_get() == True:
             return False  # this shouldnt happen but you never know
 
-        vg1 = vertex_groups.create_vertex_group(obj=obj, vg_name="VG1")
-        vg2 = vertex_groups.create_vertex_group(obj=obj, vg_name="VG2")
+        vg1 = test_function(lambda: vertex_groups.create_vertex_group(obj=obj, vg_name="VG1"))
+        vg2 = test_function(lambda: vertex_groups.create_vertex_group(obj=obj, vg_name="VG2"))
         if obj.vertex_groups.active != None:
             return False
-        vg3 = vertex_groups.create_vertex_group(obj=obj, vg_name="VG3")
+        vg3 = test_function(lambda: vertex_groups.create_vertex_group(obj=obj, vg_name="VG3"))
         obj.vertex_groups.active = vg3
-        vertex_groups.set_vertex_group_values_uniform(vertex_group=vg3, vertex_indices=list_unchanged,
-                                                      value=unchaged_uniform_value)
+        test_function(lambda: vertex_groups.set_vertex_group_values_uniform(vertex_group=vg3, vertex_indices=list_unchanged,
+                                                                            value=unchaged_uniform_value))
 
-        vertex_groups.set_vertex_group_values_specific(vertex_group=vg1, weights_for_verts=dict_specific)
-        vertex_groups.set_vertex_group_values_uniform(vertex_group=vg1, vertex_indices=list_uniform,
-                                                      value=uniform_value)
+        test_function(lambda: vertex_groups.set_vertex_group_values_specific(vertex_group=vg1, weights_for_verts=dict_specific))
+        test_function(lambda: vertex_groups.set_vertex_group_values_uniform(vertex_group=vg1, vertex_indices=list_uniform,
+                                                                            value=uniform_value))
 
-        vertex_groups.set_vertex_group_values_uniform(vertex_group=vg2, vertex_indices=list_uniform,
-                                                      value=uniform_value)
-        vertex_groups.set_vertex_group_values_specific(vertex_group=vg2, weights_for_verts=dict_specific)
+        test_function(lambda: vertex_groups.set_vertex_group_values_uniform(vertex_group=vg2, vertex_indices=list_uniform,
+                                                                            value=uniform_value))
+        test_function(lambda: vertex_groups.set_vertex_group_values_specific(vertex_group=vg2, weights_for_verts=dict_specific))
 
-        vertex_groups.remove_verts_from_vertex_group(vertex_group=vg1, vert_indices=list_remove, validate=True)
-        vertex_groups.remove_verts_from_vertex_group(vertex_group=vg2, vert_indices=list_remove, validate=True)
+        test_function(lambda: vertex_groups.remove_verts_from_vertex_group(vertex_group=vg1, vert_indices=list_remove, validate=True))
+        test_function(lambda: vertex_groups.remove_verts_from_vertex_group(vertex_group=vg2, vert_indices=list_remove, validate=True))
 
-        verts_vg1 = vertex_groups.get_verts_in_vertex_group(vertex_group=vg1)
-        verts_vg2 = vertex_groups.get_verts_in_vertex_group(vertex_group=vg2)
+        verts_vg1 = test_function(lambda: vertex_groups.get_verts_in_vertex_group(vertex_group=vg1))
+        verts_vg2 = test_function(lambda: vertex_groups.get_verts_in_vertex_group(vertex_group=vg2))
 
         expected_verts = list_uniform.copy()
         for weight, index_list in dict_specific.items():
@@ -1365,8 +1387,8 @@ def run(context=None):
         if len(verts_vg1) != len(verts_vg2) or len(verts_vg1) != expected_amount or len(verts_vg1) == 0:
             return False
 
-        weights_vg1 = vertex_groups.get_vertex_weights(vertex_group=vg1, vertex_indices=verts_vg1)
-        weights_vg2 = vertex_groups.get_vertex_weights(vertex_group=vg2, vertex_indices=verts_vg2)
+        weights_vg1 = test_function(lambda: vertex_groups.get_vertex_weights(vertex_group=vg1, vertex_indices=verts_vg1))
+        weights_vg2 = test_function(lambda: vertex_groups.get_vertex_weights(vertex_group=vg2, vertex_indices=verts_vg2))
 
         # vg1 weights
         for vert_index in verts_vg1:
@@ -1420,8 +1442,8 @@ def run(context=None):
         if obj.vertex_groups.active_index != vg3.index or obj.vertex_groups.active != vg3:
             return False
 
-        vg3_verts = vertex_groups.get_verts_in_vertex_group(vertex_group=vg3)
-        vg3_weights = vertex_groups.get_vertex_weights(vertex_group=vg3, vertex_indices=vg3_verts)
+        vg3_verts = test_function(lambda: vertex_groups.get_verts_in_vertex_group(vertex_group=vg3))
+        vg3_weights = test_function(lambda: vertex_groups.get_vertex_weights(vertex_group=vg3, vertex_indices=vg3_verts))
 
         if len(vg3_verts) != len(remove_invalid_indices(list_unchanged)):
             return False
@@ -1441,8 +1463,8 @@ def run(context=None):
             mod_mask = obj.modifiers.new(name="Mask modifier", type="MASK")
             mod_mask.vertex_group = vg_name
             mod_mask.invert_vertex_group = True
-            orig_shape = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, apply_transforms=False)
+            orig_shape = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, apply_transforms=False))
             obj.modifiers.remove(mod_mask)
             mod_vw_mix = obj.modifiers.new(
                 name='Check for zero weight vertices', type="VERTEX_WEIGHT_MIX")
@@ -1454,8 +1476,8 @@ def run(context=None):
             mod_mask = obj.modifiers.new(name="Mask modifier", type="MASK")
             mod_mask.vertex_group = vg_name
             mod_mask.invert_vertex_group = True
-            new_shape = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, apply_transforms=False)
+            new_shape = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, apply_transforms=False))
             obj.modifiers.remove(mod_mask)
             obj.modifiers.remove(mod_vw_mix)
             are_the_same = (len(orig_shape.vertices)
@@ -1465,13 +1487,13 @@ def run(context=None):
         def has_any_weights_over_zero_at_all(obj, vg_name):
             # a mask modifier only affects assigned vertices with a weight bigger (but not equal to) than 0
             vg_exists(obj=obj, vg_name=vg_name)
-            orig_mesh = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, apply_transforms=False)
+            orig_mesh = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, apply_transforms=False))
             mod_mask = obj.modifiers.new(name="Mask modifier", type="MASK")
             mod_mask.vertex_group = vg_name
             mod_mask.invert_vertex_group = True
-            new_mesh = create_real_mesh.create_real_mesh_copy(
-                context=C, obj=obj, apply_transforms=False)
+            new_mesh = test_function(change_area=False, fun=lambda: create_real_mesh.create_real_mesh_copy(
+                context=C, obj=obj, apply_transforms=False))
             obj.modifiers.remove(mod_mask)
             are_the_same = len(orig_mesh.vertices) == len(new_mesh.vertices)
             return are_the_same == False
@@ -1484,7 +1506,8 @@ def run(context=None):
                 print(have_the_same_weights.__name__ + ": " +
                       vg1_name + " has no weights over 0")
                 return False
-            if test_helpers.are_objs_the_same(context=C, obj1=obj1, obj2=obj2, apply_transforms_obj1=False, apply_transforms_obj2=False, mute=False) == False:
+            if test_helper.are_objs_the_same(obj1=obj1, obj2=obj2, apply_transforms_obj1=False,
+                                             apply_transforms_obj2=False, mute=False) == False:
                 print(have_the_same_weights.__name__ + ".line alpha")
                 return False
             mod_displace1 = obj1.modifiers.new(
@@ -1494,8 +1517,8 @@ def run(context=None):
             mod_displace2 = obj2.modifiers.new(
                 name="displace test 2", type="DISPLACE")
             mod_displace2.vertex_group = vg2_name
-            are_the_same = test_helpers.are_objs_the_same(
-                context=C, obj1=obj1, obj2=obj2, apply_transforms_obj1=False, apply_transforms_obj2=False, mute=False)
+            are_the_same = test_helper.are_objs_the_same(obj1=obj1, obj2=obj2, apply_transforms_obj1=False,
+                                                         apply_transforms_obj2=False, mute=False)
             obj1.modifiers.remove(mod_displace1)
             obj2.modifiers.remove(mod_displace2)
             return are_the_same
@@ -1513,7 +1536,7 @@ def run(context=None):
             # always create the new monkey in the original scene so all monkeys are in there.
             C.window.scene = original_scene
             # monkey because we use topology for datatransfer
-            monky = test_helpers.create_subdiv_obj(
+            monky = test_helper.create_subdiv_obj(
                 subdivisions=0, type="MONKEY")
             C.window.scene = current_scene
             return monky
@@ -1527,23 +1550,23 @@ def run(context=None):
 
         def test_uniform_weight_setting():
             # test if the class method is able to change any set of weights (0, smaller, 1) to the chosen value
-            vg_all_0_5 = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="ALL VERTICES 0.5")
-            vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_all_0_5, vertex_indices="ALL", value=0.5)
-            vg_some_0_5 = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="SOME VERTICES 0.5")
-            vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_some_0_5, vertex_indices=[1, 7, 23, 83],
-                                                          value=0.5)
+            vg_all_0_5 = test_function(lambda: vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="ALL VERTICES 0.5"))
+            test_function(lambda: vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_all_0_5, vertex_indices="ALL", value=0.5))
+            vg_some_0_5 = test_function(lambda: vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="SOME VERTICES 0.5"))
+            test_function(lambda: vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_some_0_5, vertex_indices=[1, 7, 23, 83],
+                                                                                value=0.5))
             for weight in (0, 0.2, 1):
                 new_monkey = create_monkey()
-                test_helpers.mess_around(switch_scenes=False)
-                vg_some_values = vertex_groups.create_vertex_group(obj=new_monkey,
-                                                                   vg_name="SOME VERTICES " + str(weight))
-                vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_some_values,
-                                                              vertex_indices=[1, 7, 23, 83], value=weight)
+                test_helper.mess_around(switch_scenes=False)
+                vg_some_values = test_function(lambda: vertex_groups.create_vertex_group(obj=new_monkey,
+                                                                                         vg_name="SOME VERTICES " + str(weight)))
+                test_function(lambda: vertex_groups.set_vertex_group_values_uniform(vertex_group=vg_some_values,
+                                                                                    vertex_indices=[1, 7, 23, 83], value=weight))
 
                 # test with only_assigned = False
-                mod_uniform = vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(obj=new_monkey,
-                                                                                       vg_name=vg_some_values.name,
-                                                                                       only_assigned=False, weight=0.5)
+                mod_uniform = test_function(lambda: vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(obj=new_monkey,
+                                                                                                             vg_name=vg_some_values.name,
+                                                                                                             only_assigned=False, weight=0.5))
                 if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_all_0_5.name, vg2_name=vg_some_values.name) == False:
                     print(
                         "Testing vg_uniform failed. Current weight that was tested: " + str(weight))
@@ -1560,9 +1583,9 @@ def run(context=None):
                 new_monkey.modifiers.remove(mod_uniform)
 
                 # test with only_assigned = True
-                mod_uniform = vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(obj=new_monkey,
-                                                                                       vg_name=vg_some_values.name,
-                                                                                       only_assigned=True, weight=0.5)
+                mod_uniform = test_function(lambda: vertex_groups.VGroupsWithModifiers.vertex_weight_uniform(obj=new_monkey,
+                                                                                                             vg_name=vg_some_values.name,
+                                                                                                             only_assigned=True, weight=0.5))
                 if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_some_0_5.name, vg2_name=vg_some_values.name) == False:
                     print(
                         "Testing vg_uniform failed. Current weight that was tested: " + str(weight))
@@ -1582,18 +1605,18 @@ def run(context=None):
             # test if the class method is able to properly duplicate a vertex group.
             # this must include that unassigned vertices do not get assigned with a weight of 0, which can sometimes happen with modifiers.
             new_monkey = create_monkey()
-            test_helpers.mess_around(switch_scenes=False)
+            test_helper.mess_around(switch_scenes=False)
             some_weights = {0.2: [1, 5, 8], 0.8: [7, 2, 11], 1: [20]}
 
-            vg_specific = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg")
-            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=some_weights)
+            vg_specific = test_function(lambda: vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg"))
+            test_function(lambda: vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=some_weights))
 
-            vg_specific_new_monkey = vertex_groups.create_vertex_group(obj=new_monkey, vg_name="Specific vg")
-            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific_new_monkey,
-                                                           weights_for_verts=some_weights)
+            vg_specific_new_monkey = test_function(lambda: vertex_groups.create_vertex_group(obj=new_monkey, vg_name="Specific vg"))
+            test_function(lambda: vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific_new_monkey,
+                                                                                 weights_for_verts=some_weights))
 
-            dict_copy = vertex_groups.VGroupsWithModifiers.mimic_vertex_group(obj=new_monkey,
-                                                                              vg_to_duplicate=vg_specific_new_monkey.name)
+            dict_copy = test_function(lambda: vertex_groups.VGroupsWithModifiers.mimic_vertex_group(obj=new_monkey,
+                                                                                                    vg_to_duplicate=vg_specific_new_monkey.name))
             vg_copy = dict_copy["new vg"]
             new_mod = dict_copy["mod"]
 
@@ -1617,14 +1640,14 @@ def run(context=None):
         def test_mimic_vg_of_external_objects():
             # test if the class method is able to mimic a vertex group of another object
             new_monkey = create_monkey()
-            test_helpers.mess_around(switch_scenes=False)
+            test_helper.mess_around(switch_scenes=False)
             other_weights = {0.3: [6, 1], 0.9: [7, 0], 1: [11, 12, 23]}
 
-            vg_specific = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg another")
-            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=other_weights)
+            vg_specific = test_function(lambda: vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg another"))
+            test_function(lambda: vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=other_weights))
 
-            new_mod = vertex_groups.VGroupsWithModifiers.mimic_external_vertex_group(
-                context=C, main_obj=new_monkey, target_obj=basic_monkey, vg_of_target=vg_specific.name)
+            new_mod = test_function(lambda: vertex_groups.VGroupsWithModifiers.mimic_external_vertex_group(
+                context=C, main_obj=new_monkey, target_obj=basic_monkey, vg_of_target=vg_specific.name))
 
             C.window.scene = original_scene
             if have_the_same_weights(obj1=new_monkey, obj2=basic_monkey, vg1_name=vg_specific.name, vg2_name=vg_specific.name) == False:
@@ -1644,15 +1667,15 @@ def run(context=None):
             weight_dict_new = {0.0000001: [10, 61, 23, 5], 1: [
                 50, 51, 52], 0: have_zero_weights}
             new_monkey = create_monkey()
-            test_helpers.mess_around(switch_scenes=False)
-            vg_specific = vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg")
-            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=weight_dict_old)
+            test_helper.mess_around(switch_scenes=False)
+            vg_specific = test_function(lambda: vertex_groups.create_vertex_group(obj=basic_monkey, vg_name="Specific vg"))
+            test_function(lambda: vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific, weights_for_verts=weight_dict_old))
 
-            vg_specific_new = vertex_groups.create_vertex_group(obj=new_monkey, vg_name="Specific vg antother")
-            vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific_new,
-                                                           weights_for_verts=weight_dict_new)
+            vg_specific_new = test_function(lambda: vertex_groups.create_vertex_group(obj=new_monkey, vg_name="Specific vg antother"))
+            test_function(lambda: vertex_groups.set_vertex_group_values_specific(vertex_group=vg_specific_new,
+                                                                                 weights_for_verts=weight_dict_new))
 
-            mod = vertex_groups.VGroupsWithModifiers.remove_0_weights(obj=new_monkey, vg_name=vg_specific_new.name)
+            mod = test_function(lambda: vertex_groups.VGroupsWithModifiers.remove_0_weights(obj=new_monkey, vg_name=vg_specific_new.name))
             if have_the_same_weights(obj1=basic_monkey, obj2=new_monkey, vg1_name=vg_specific.name, vg2_name=vg_specific_new.name) == False:
                 print("Failed to remove 0 weight vertices")
                 return False
@@ -1688,9 +1711,9 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT shapekeys")
             return False
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
         subdivs = 0
-        cube = test_helpers.create_subdiv_obj(subdivs, type="CUBE")
+        cube = test_helper.create_subdiv_obj(subdivs, type="CUBE")
         """
         Testing createShapekey()
         1. Create basis shapekey as the function requires it
@@ -1715,7 +1738,7 @@ def run(context=None):
                           "dictionary": [3.5]
                           }
         for ref_key, small_list in reference_dict.items():
-            reference_obj = test_helpers.create_subdiv_obj(
+            reference_obj = test_helper.create_subdiv_obj(
                 subdivs, type="CUBE")
             small_list.append(reference_obj)
             C.view_layer.objects.active = reference_obj
@@ -1743,7 +1766,7 @@ def run(context=None):
             t_value = small_list[0]
             #refObj = smallList[1]
             ref = small_list[2]
-            new_shapekey = shapekeys.create_shapekey(obj=cube, reference=ref)
+            new_shapekey = test_function(lambda: shapekeys.create_shapekey(obj=cube, reference=ref))
             small_list.append(new_shapekey)
 
         for x in range(2):  # mess stuff up after the first loop was run
@@ -1768,7 +1791,7 @@ def run(context=None):
                     for xyz in [0, 1, 2]:
                         if round(sk_vector[xyz], 3) != round(ref_mesh_vector[xyz], 3):
                             return False
-            test_helpers.mess_around(switch_scenes=True)
+            test_helper.mess_around(switch_scenes=True)
 
         """
         Testing muteAllShapekeys()
@@ -1788,23 +1811,23 @@ def run(context=None):
         third_sk = reference_dict_as_list[2][1][3]
 
         # mute all
-        shapekeys.mute_all_shapekeys(mesh=cube.data, mute=True, exclude=[])
+        test_function(lambda: shapekeys.mute_all_shapekeys(mesh=cube.data, mute=True, exclude=[]))
         for sk in cube.data.shape_keys.key_blocks:
             if sk.mute == False:
                 return False
         if basis_sk.mute == False:  # if for some reason it isn't included in the previous for-loop
             return False
         # unmute all
-        shapekeys.mute_all_shapekeys(mesh=cube.data, mute=False, exclude=[])
+        test_function(lambda: shapekeys.mute_all_shapekeys(mesh=cube.data, mute=False, exclude=[]))
         for sk in cube.data.shape_keys.key_blocks:
             if sk.mute == True:
                 return False
 
-        shapekeys.mute_all_shapekeys(mesh=cube.data, mute=True, exclude=["BASIS", second_sk])
+        test_function(lambda: shapekeys.mute_all_shapekeys(mesh=cube.data, mute=True, exclude=["BASIS", second_sk]))
         if first_sk.mute == False or third_sk.mute == False or basis_sk.mute == True or second_sk.mute == True:
             return False
 
-        shapekeys.mute_all_shapekeys(mesh=cube.data, mute=False, exclude=[first_sk])
+        test_function(lambda: shapekeys.mute_all_shapekeys(mesh=cube.data, mute=False, exclude=[first_sk]))
         if first_sk.mute == False or third_sk.mute == True or basis_sk.mute == True or second_sk.mute == True:
             return False
 
@@ -1818,7 +1841,7 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT modifiers")
             return False
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
         """
         1. Add a few different modifiers
         2. get all their positions
@@ -1827,7 +1850,7 @@ def run(context=None):
         5. Check again
         6. repeat 4 and 5, but this time with a "negative" position
         """
-        obj = test_helpers.create_subdiv_obj(subdivisions=0, type="CUBE")
+        obj = test_helper.create_subdiv_obj(subdivisions=0, type="CUBE")
         bpy.ops.object.modifier_add(type='EDGE_SPLIT')
         bpy.ops.object.modifier_add(type='MASK')
         bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
@@ -1835,10 +1858,10 @@ def run(context=None):
         bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
         bpy.ops.object.modifier_add(type='MESH_SEQUENCE_CACHE')
         orig_scene = C.scene
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
         positions = dict()  # {position: modifier}
         for mod in obj.modifiers:
-            positions[modifiers.get_modifier_position_in_stack(modifier=mod)] = mod
+            positions[test_function(lambda: modifiers.get_modifier_position_in_stack(modifier=mod))] = mod
         first_mod = positions[0]
         last_mod = positions[len(obj.modifiers) - 1]
         # need to switch back to original scene if we want to select the obj
@@ -1850,17 +1873,17 @@ def run(context=None):
             if bpy.ops.object.modifier_move_up(modifier=first_mod.name) != {'CANCELLED'} or bpy.ops.object.modifier_move_down(modifier=last_mod.name) != {'CANCELLED'}:
                 # trying to move a modifier up or down returns {'FINISHED'} if it can move up/down, and {'CANCELLED'} if it can't. (Meaning it already is at first/last position)
                 return False
-        test_helpers.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True)
 
         # setting the second modifier to last position in stack
         second_mod = positions[1]
         third_mod = positions[2]
-        modifiers.move_modifer_to_position_in_stack(
-            context=C, modifier=second_mod, position=len(obj.modifiers) - 1)
-        last_pos_positive = modifiers.get_modifier_position_in_stack(modifier=second_mod)
-        modifiers.move_modifer_to_position_in_stack(
-            context=C, modifier=third_mod, position=-1)
-        last_pos_negative = modifiers.get_modifier_position_in_stack(modifier=third_mod)
+        test_function(lambda: modifiers.move_modifer_to_position_in_stack(
+            context=C, modifier=second_mod, position=len(obj.modifiers) - 1))
+        last_pos_positive = test_function(lambda: modifiers.get_modifier_position_in_stack(modifier=second_mod))
+        test_function(lambda: modifiers.move_modifer_to_position_in_stack(
+            context=C, modifier=third_mod, position=-1))
+        last_pos_negative = test_function(lambda: modifiers.get_modifier_position_in_stack(modifier=third_mod))
         if last_pos_negative != last_pos_positive or last_pos_negative != len(obj.modifiers) - 1:
             return False
 
@@ -1884,27 +1907,27 @@ def run(context=None):
         def test_surface_deform(obj):
             smod = obj.modifiers.new(
                 name='surfaceDeformMod', type='SURFACE_DEFORM')
-            empty_obj = test_helpers.create_subdiv_obj(0, "CUBE")
+            empty_obj = test_helper.create_subdiv_obj(0, "CUBE")
             empty_obj.data.clear_geometry()
-            full_obj = test_helpers.create_subdiv_obj(0, "CUBE")
-            test_helpers.mess_around(False)
+            full_obj = test_helper.create_subdiv_obj(0, "CUBE")
+            test_helper.mess_around(False)
 
             smod.target = empty_obj
-            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == True:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=smod)) == True:
                 return False  # target without geometry cannot be bound
 
             smod.target = full_obj
-            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == False:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=smod)) == False:
                 return False  # binding should be possible and thus successful
-            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == True:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=smod)) == True:
                 return False  # unbinding, so no bind should be detected
 
             smod.target = None
-            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == True:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=smod)) == True:
                 return False  # no target obj is set and binding shouldn't be possible
 
             smod.target = full_obj
-            if modifiers.ButtonPresser.try_to_bind(modifier=smod) == False:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=smod)) == False:
                 return False  # binding should be possible and thus successful
 
             return True
@@ -1938,18 +1961,18 @@ def run(context=None):
 
             ld_mod = obj.modifiers.new(
                 name='LaplacianDeformMod', type='LAPLACIANDEFORM')
-            test_helpers.mess_around(False)
+            test_helper.mess_around(False)
 
-            if modifiers.ButtonPresser.try_to_bind(modifier=ld_mod) == True:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=ld_mod)) == True:
                 return False  # doesnt work with no vertex group selected
 
             filled_vg = obj.vertex_groups.new(name="filled")
             # adds a weight of 0.5 to vertex with index 0
             filled_vg.add([0], 0.5, "ADD")
             ld_mod.vertex_group = filled_vg.name
-            if modifiers.ButtonPresser.try_to_bind(modifier=ld_mod) == False:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=ld_mod)) == False:
                 return False  # should work since vertex group has at least one vertex in it
-            if modifiers.ButtonPresser.try_to_bind(modifier=ld_mod) == True:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=ld_mod)) == True:
                 # unbinding, so False is expected as the return value.
                 return False
 
@@ -1968,23 +1991,23 @@ def run(context=None):
         def test_mesh_deform(obj):
             md_mod = obj.modifiers.new(
                 name='MeshDeformMod', type='MESH_DEFORM')
-            target_obj = test_helpers.create_subdiv_obj(0, "PLANE")
-            test_helpers.mess_around(False)
+            target_obj = test_helper.create_subdiv_obj(0, "PLANE")
+            test_helper.mess_around(False)
 
-            if modifiers.ButtonPresser.try_to_bind(modifier=md_mod) == True:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=md_mod)) == True:
                 return False  # no target object selected, binding shouldnt be possible
             md_mod.object = target_obj
 
-            if modifiers.ButtonPresser.try_to_bind(modifier=md_mod) == False:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=md_mod)) == False:
                 return False  # target object selected, binding should be possible
-            if modifiers.ButtonPresser.try_to_bind(modifier=md_mod) == True:
+            if test_function(lambda: modifiers.ButtonPresser.try_to_bind(modifier=md_mod)) == True:
                 # unbinding, so False should be returned by the function.
                 return False
 
             return True
 
         def test_data_transfer(obj):
-            obj_target = test_helpers.create_subdiv_obj(2, "PLANE")
+            obj_target = test_helper.create_subdiv_obj(2, "PLANE")
             obj_target.vertex_groups.new()
             dt_mod = obj.modifiers.new(name='Data transfer', type='DATA_TRANSFER')
             dt_mod.object = obj_target
@@ -1992,11 +2015,11 @@ def run(context=None):
             dt_mod.data_types_verts = {'VGROUP_WEIGHTS'}
             dt_mod.vert_mapping = 'TOPOLOGY'
             dt_mod.layers_vgroup_select_src = 'ALL'
-            test_helpers.mess_around(False)
+            test_helper.mess_around(False)
 
             if len(obj.vertex_groups) != 0:
                 return False
-            modifiers.ButtonPresser.data_transfer_button(dt_mod)
+            test_function(lambda: modifiers.ButtonPresser.data_transfer_button(dt_mod))
             if len(obj.vertex_groups) == 0:
                 return False
 
@@ -2005,9 +2028,9 @@ def run(context=None):
         for test_some_mod in (test_surface_deform, test_laplacian_deform, test_mesh_deform, test_data_transfer):
             # testing all operator binds in different scene-context
             for set_scene_context in (object_in_current_scene, object_in_other_scene, object_in_no_scene):
-                plane = test_helpers.create_subdiv_obj(0, "PLANE")
+                plane = test_helper.create_subdiv_obj(0, "PLANE")
                 set_scene_context(plane)
-                test_helpers.mess_around(False)
+                test_helper.mess_around(False)
                 if test_some_mod(plane) == False:
                     print(test_some_mod.__name__)
                     print(set_scene_context.__name__)
@@ -2031,33 +2054,33 @@ def run(context=None):
         def test_bool(blend_object_creator):
             blend_obj = blend_object_creator()
             for default_to_use in (0, 1, False, True):
-                handler = custom_properties.CustomPropertyHandler.SimpleBool(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=default_to_use)
-                if handler.get_value() != default_to_use:
+                handler = test_function(lambda: custom_properties.CustomPropertyHandler.SimpleBool(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=default_to_use))
+                if test_function(lambda: handler.get_value()) != default_to_use:
                     print("Wrong default value for bool prop")
                     return False
-                if handler.type != bool:
+                if test_function(lambda: handler.type) != bool:
                     print("Wrong type for boolean prop")
                     return False
-                t_dict = handler.get_dict()
+                t_dict = test_function(lambda: handler.get_dict())
                 if t_dict["description"] != description_to_use:  # has no "name" key
                     print("Wrong name or description")
                     return False
-                custom_properties.CustomPropertyHandler.change_description(blend_obj=blend_obj,prop_name=name_to_use,description="new Description")
-                if handler.get_dict()["description"] != "new Description":
+                test_function(lambda: custom_properties.CustomPropertyHandler.change_description(blend_obj=blend_obj, prop_name=name_to_use, description="new Description"))
+                if test_function(lambda: handler.get_dict())["description"] != "new Description":
                     print("Description wasn't changed")
                     return False
             return True
 
         def test_float(blend_object_creator):
             blend_obj = blend_object_creator()
-            handler = custom_properties.CustomPropertyHandler.SimpleFloat(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=8, min=0, max=51, soft_min=None, soft_max=15)
-            if type(handler.get_value()) != float or handler.get_value() != 8.0:
+            handler = test_function(lambda: custom_properties.CustomPropertyHandler.SimpleFloat(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=8, min=0, max=51, soft_min=None, soft_max=15))
+            if type(test_function(lambda: handler.get_value())) != float or test_function(lambda: handler.get_value()) != 8.0:
                 print("Wrong default value for float prop")
                 return False
-            if handler.type != float:
+            if test_function(lambda: handler.type) != float:
                 print("Wrong type for float prop")
                 return False
-            t_dict = handler.get_dict()
+            t_dict = test_function(lambda: handler.get_dict())
             if t_dict["description"] != description_to_use:  # has no "name" key
                 print("Wrong name or description")
                 return False
@@ -2065,13 +2088,13 @@ def run(context=None):
 
         def test_integer(blend_object_creator):
             blend_obj = blend_object_creator()
-            handler = custom_properties.CustomPropertyHandler.SimpleInteger(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=-89, min=-10000, max=24, soft_min=0, soft_max=None)
-            if handler.get_value() != -89:
+            handler = test_function(lambda: custom_properties.CustomPropertyHandler.SimpleInteger(blend_obj=blend_obj, name=name_to_use, description=description_to_use, default=-89, min=-10000, max=24, soft_min=0, soft_max=None))
+            if test_function(lambda: handler.get_value()) != -89:
                 print("Wrong default value for integer prop")
                 return False
-            if handler.type != int:
+            if test_function(lambda: handler.type) != int:
                 print("Wrong type for integer prop")
-            t_dict = handler.get_dict()
+            t_dict = test_function(lambda: handler.get_dict())
             if t_dict["description"] != description_to_use:  # has no "name" key
                 print("Wrong name or description")
                 return False
@@ -2080,18 +2103,18 @@ def run(context=None):
         def test_set_and_get_val(blend_object_creator):
             for prop_val in [1, "Hi", D.objects[0], [D.meshes[0], D.scenes[0]]]:
                 blend_obj = blend_object_creator()
-                if custom_properties.CustomPropertyHandler.just_set_val(blend_obj=blend_obj, prop_name="New custom prop", value=prop_val, test_for_success=True) != True:
+                if test_function(lambda: custom_properties.CustomPropertyHandler.just_set_val(blend_obj=blend_obj, prop_name="New custom prop", value=prop_val, test_for_success=True)) != True:
                     print("Setting value of type " + str(type(prop_val)) + " failed")
                     return False
-                if custom_properties.CustomPropertyHandler.just_get_val(blend_obj=blend_obj, prop_name="New custom prop") != prop_val:
+                if test_function(lambda: custom_properties.CustomPropertyHandler.just_get_val(blend_obj=blend_obj, prop_name="New custom prop")) != prop_val:
                     print("just_get_val() method failed")
                     return False
 
             return True
 
-        create_scene = lambda: D.scenes.new(name="new scene for testing")
-        create_obj = lambda: test_helpers.create_subdiv_obj(subdivisions=2, type="MONKEY")
-        create_collection = lambda: D.collections.new(name="new Collection for testing")
+        def create_scene(): return D.scenes.new(name="new scene for testing")
+        def create_obj(): return test_helper.create_subdiv_obj(subdivisions=2, type="MONKEY")
+        def create_collection(): return D.collections.new(name="new Collection for testing")
 
         for create_blend_obj in (create_obj, create_scene, create_collection):
             for fun in (test_bool, test_float, test_integer, test_set_and_get_val):
@@ -2112,21 +2135,21 @@ def run(context=None):
         # different types of objects to add drivers to
         objects_and_props = []
         bpy.ops.object.camera_add(enter_editmode=False, align='VIEW', location=(0, 0, 0), rotation=(1.39626, 1.08593e-07, 0.0977383), scale=(1, 1, 1))
-        obj_camera = C.object
+        obj_camera = C.active_object
         camera = obj_camera.data
         objects_and_props += [(camera, (lambda: camera.lens), "lens")]
 
         scene_new = D.scenes.new("new scene")
         objects_and_props += [(scene_new, (lambda: scene_new.gravity[1]), "gravity", 1)]
 
-        obj_plane = test_helpers.create_subdiv_obj(subdivisions=0, type="PLANE")
-        mod_wave = obj_plane.modifiers.new(name="wave",type="WAVE")
-        objects_and_props += [(mod_wave, (lambda: mod_wave.show_viewport),"show_viewport")]
+        obj_plane = test_helper.create_subdiv_obj(subdivisions=0, type="PLANE")
+        mod_wave = obj_plane.modifiers.new(name="wave", type="WAVE")
+        objects_and_props += [(mod_wave, (lambda: mod_wave.show_viewport), "show_viewport")]
 
         bpy.ops.object.light_add(type='SUN', align='WORLD', location=(0, 0, 0), scale=(1, 1, 1))
-        obj_sun = C.object
+        obj_sun = C.active_object
         sun = obj_sun.data
-        obj_monkey = test_helpers.create_subdiv_obj(subdivisions=2, type="MONKEY")
+        obj_monkey = test_helper.create_subdiv_obj(subdivisions=2, type="MONKEY")
         obj_monkey["cust prop"] = 2.7
         obj_monkey.update_tag()  # otherwise driver cannot access that custom property
 
@@ -2136,25 +2159,25 @@ def run(context=None):
             data_path = stuff[2]
             if len(stuff) == 4:
                 prop_index = stuff[3]
-                driver_helper = drivers.DriverHelper(boss_object=boss_obj, property_name=data_path, index=prop_index)
+                driver_helper = test_function(lambda: drivers.DriverHelper(boss_object=boss_obj, property_name=data_path, index=prop_index))
             else:
-                driver_helper = drivers.DriverHelper(boss_object=boss_obj, property_name=data_path)
-            if len(driver_helper.driver.variables) != 0:
+                driver_helper = test_function(lambda: drivers.DriverHelper(boss_object=boss_obj, property_name=data_path))
+            if len(test_function(lambda: driver_helper.driver.variables)) != 0:
                 print("No variables should exist yet")
                 return False
-            if driver_helper.driver.expression != "":
-                print(driver_helper.driver.expression)
+            if test_function(lambda: driver_helper.driver.expression) != "":
+                print(test_function(lambda: driver_helper.driver.expression))
                 print("Expression should be empty.")
                 return False
-            var_normal = driver_helper.add_variable("new_variable")
+            var_normal = test_function(lambda: driver_helper.add_variable("new_variable"))
             if var_normal.name != "new_variable":
                 print("Wrong variable name")
                 return False
-            var_linked_normal = driver_helper.add_variable_linked_to_property(prop_owner=sun, property_name="energy")
-            var_linked_custom = driver_helper.add_variable_linked_to_property(prop_owner=obj_monkey, property_name="cust prop", is_custom_property=True)
+            var_linked_normal = test_function(lambda: driver_helper.add_variable_linked_to_property(prop_owner=sun, property_name="energy"))
+            var_linked_custom = test_function(lambda: driver_helper.add_variable_linked_to_property(prop_owner=obj_monkey, property_name="cust prop", is_custom_property=True))
             driver_helper.driver.expression = var_linked_normal.name + " + " + var_linked_custom.name
 
-            driver_helper.get_variables()
+            test_function(lambda: driver_helper.get_variables())
 
             # # is_valid returns False if a variable isn't set properly, but not if the driver expression is wrong.
             # boss_obj.animation_data.drivers.update()
@@ -2170,15 +2193,15 @@ def run(context=None):
             #     print("Driver should be valid, but isn't")
             #     return False
 
-            if boss_obj == camera:
-                driver_helper.refresh_driver_value(context=C)
-                if round(fun_get_value(), 4) != round(obj_monkey["cust prop"] + sun.energy, 4):
-                    print(fun_get_value())
-                    print(obj_monkey["cust prop"] + sun.energy)
-                    print(driver_helper.driver.expression)
-                    print("Wrong end value!")
-                    print(boss_obj.name)
-                    return False
+        if boss_obj == camera:
+            test_function(lambda: driver_helper.refresh_driver_value(context=C))
+            if round(fun_get_value(), 4) != round(obj_monkey["cust prop"] + sun.energy, 4):
+                print(fun_get_value())
+                print(obj_monkey["cust prop"] + sun.energy)
+                print(test_function(lambda: driver_helper.driver.expression))
+                print("Wrong end value!")
+                print(boss_obj.name)
+                return False
 
         return True
 
@@ -2190,67 +2213,67 @@ def run(context=None):
         except:
             print("COULDN'T IMPORT node_helper")
             return False
-        #currently only tests geometry node modifer
+        # currently only tests geometry node modifer
 
-        obj_monkey = test_helpers.create_subdiv_obj(subdivisions=1, type="MONKEY")
-        mod_geo_node = obj_monkey.modifiers.new(name="Geometry Node modifier",type='NODES')
+        obj_monkey = test_helper.create_subdiv_obj(subdivisions=1, type="MONKEY")
+        mod_geo_node = obj_monkey.modifiers.new(name="Geometry Node modifier", type='NODES')
         random_node_group = bpy.data.node_groups.new(name='Geometry Nodes Test', type='GeometryNodeTree')
         for source in (None, mod_geo_node, random_node_group, mod_geo_node.node_group.name):
-            nhelper = node_helper.GeometryNodesModifierHandler(source=source, reset=False)
-            if type(nhelper.node_group) != bpy.types.GeometryNodeTree:
+            nhelper = test_function(lambda: node_helper.GeometryNodesModifierHandler(source=source, reset=False))
+            if type(test_function(lambda: nhelper.node_group)) != bpy.types.GeometryNodeTree:
                 print("Node group wasn't identified correctly.")
-                print(type(nhelper.node_group))
+                print(type(test_function(lambda: nhelper.node_group)))
                 return False
 
-        nhelper = node_helper.GeometryNodesModifierHandler(source=mod_geo_node, reset=True)
-        if len(nhelper.node_group.links) != 0:
+        nhelper = test_function(lambda: node_helper.GeometryNodesModifierHandler(source=mod_geo_node, reset=True))
+        if len(test_function(lambda: nhelper.node_group.links)) != 0:
             print("Reset didn't work, there are links")
             return False
-        if nhelper.main_input_node == None or nhelper.main_output_node == None:
+        if test_function(lambda: nhelper.main_input_node) == None or nhelper.main_output_node == None:
             print("Reset didn't work, no input/output node exists")
             return False
-        
-        input_socket = nhelper.add_input(bl_socket_idname='NodeSocketBool', name="Some Input")
-        output_socket = nhelper.add_output(bl_socket_idname='NodeSocketFloat', name="Some output")
+
+        input_socket = test_function(lambda: nhelper.add_input(bl_socket_idname='NodeSocketBool', name="Some Input"))
+        output_socket = test_function(lambda: nhelper.add_output(bl_socket_idname='NodeSocketFloat', name="Some output"))
         for socket in (input_socket, output_socket):
-            if issubclass(type(socket),bpy.types.NodeSocketInterface) == False:
+            if issubclass(type(socket), bpy.types.NodeSocketInterface) == False:
                 print("Wrong type, expected NodeSocketInterface, got:")
                 print(type(socket))
                 return False
-        
-        if (input_socket.identifier in set(mod_geo_node.keys()) == False) or (output_socket.identifier+'3_attribute_name' in set(mod_geo_node.keys())==False) :
+
+        if (input_socket.identifier in set(mod_geo_node.keys()) == False) or (output_socket.identifier + '3_attribute_name' in set(mod_geo_node.keys()) == False):
             print("Problem with input/output socket on modifier")
             return False
-        
-        node_transform = nhelper.add_node('GeometryNodeTransform')
-        if len(nhelper.node_group.nodes) != 3:
+
+        node_transform = test_function(lambda: nhelper.add_node('GeometryNodeTransform'))
+        if len(test_function(lambda: nhelper.node_group.nodes)) != 3:
             print("Wrong amount of nodes")
             return False
-        
-        nhelper.connect_nodes(output_socket=nhelper.main_input_node.outputs["Some Input"], input_socket=node_transform.inputs["Rotation"])
+
+        test_function(lambda: nhelper.connect_nodes(output_socket=nhelper.main_input_node.outputs["Some Input"], input_socket=node_transform.inputs["Rotation"]))
         link = node_transform.inputs["Rotation"].links[0]
-        if link.from_socket != nhelper.main_input_node.outputs[1]:
+        if link.from_socket != test_function(lambda: nhelper.main_input_node.outputs[1]):
             print("Wrong link took place")
             return False
 
-        nhelper.clear_all_nodes()
-        if len(nhelper.node_group.nodes) != 0:
+        test_function(lambda: nhelper.clear_all_nodes())
+        if len(test_function(lambda: nhelper.node_group.nodes)) != 0:
             print("Clearing nodes failed")
             return False
-        if nhelper.main_input_node != None or nhelper.main_output_node != None:
+        if test_function(lambda: nhelper.main_input_node) != None or test_function(lambda: nhelper.main_output_node) != None:
             print("Main input/output nodes weren't cleared from instance")
             return False
 
         node_group_new = bpy.data.node_groups.new(name='Another Geometry Nodes Test', type='GeometryNodeTree')
-        nhelper_new = node_helper.GeometryNodesModifierHandler(source=node_group_new, reset=True)
-        nhelper_new.link_ng_to_modifier(mod_geo_node)
+        nhelper_new = test_function(lambda: node_helper.GeometryNodesModifierHandler(source=node_group_new, reset=True))
+        test_function(lambda: nhelper_new.link_ng_to_modifier(mod_geo_node))
 
         if mod_geo_node.node_group != node_group_new:
             print("Using new node group for modifier failed")
             return False
 
-        node_transfer_attr =  nhelper_new.add_node(node_type='GeometryNodeAttributeTransfer')
-        input_socket = node_helper.GeometryNodesModifierHandler.get_input_socket_by_identifier(node=node_transfer_attr,socket_identifier='Attribute_002')
+        node_transfer_attr = test_function(lambda: nhelper_new.add_node(node_type='GeometryNodeAttributeTransfer'))
+        input_socket = test_function(lambda: node_helper.GeometryNodesModifierHandler.get_input_socket_by_identifier(node=node_transfer_attr, socket_identifier='Attribute_002'))
         for i in range(len(node_transfer_attr.inputs)):
             if i == 3 and node_transfer_attr.inputs[i] != input_socket:
                 print("Wrong input socket from identifier")
@@ -2258,8 +2281,8 @@ def run(context=None):
             if i != 3 and node_transfer_attr.inputs[i] == input_socket:
                 print("Wrong input socket from identifier")
                 return False
-        node_capture_attr = nhelper_new.add_node(node_type='GeometryNodeCaptureAttribute')
-        output_socket = node_helper.GeometryNodesModifierHandler.get_output_socket_by_identifier(node=node_capture_attr, socket_identifier='Attribute_001')
+        node_capture_attr = test_function(lambda: nhelper_new.add_node(node_type='GeometryNodeCaptureAttribute'))
+        output_socket = test_function(lambda: node_helper.GeometryNodesModifierHandler.get_output_socket_by_identifier(node=node_capture_attr, socket_identifier='Attribute_001'))
         for i in range(len(node_capture_attr.outputs)):
             if i == 2 and node_capture_attr.outputs[i] != output_socket:
                 print("Wrong output socket from identifier")
@@ -2268,15 +2291,16 @@ def run(context=None):
                 print("Wrong output socket from identifier")
                 return False
 
-        nhelper.deselect_all_nodes()
+        test_function(lambda: nhelper.deselect_all_nodes())
         return True
 
     x = True
     # fun as in function, not the joy I haven't experienced since my first day at highschool
     for fun in (
-            test_select_objects, test_delete_object_and_mesh, test_information_gathering, test_tag_vertices, test_create_collection, test_create_real_mesh,
-            test_delete_verts_faces_edges, test_coordinateStuff, test_everything_key_frames, test_vertex_groups, test_shapekeys,
-            test_modifiers, test_custom_properties, test_drivers,test_node_helper):
+            test_select_objects, test_delete_object_and_mesh, test_information_gathering, test_tag_vertices, test_create_collection,
+            test_create_real_mesh, test_delete_verts_faces_edges, test_coordinateStuff, test_everything_key_frames, test_vertex_groups,
+            test_shapekeys, test_modifiers, test_custom_properties, test_drivers, test_node_helper
+    ):
         try:
             if fun() == True:
                 None
@@ -2294,6 +2318,7 @@ def run(context=None):
             # 1/0
             pass
 
+    C.area.type = orig_area_type
     if x == True:
         print("\nEvery test succeeded! (That's good)")
         return True
@@ -2303,4 +2328,27 @@ def run(context=None):
 
 
 if __name__ == "__main__":
-    run()
+    import bpy
+    fails = []
+    normal_run = run()
+    if normal_run != True:
+        fails += ["BASIC RUN"]
+    for area_type in (
+        "CONSOLE",
+        "PROPERTIES",
+        "VIEW_3D",
+        "TEXT_EDITOR",
+    ):
+        orig_area_type = bpy.context.area.type
+        bpy.context.area.type = area_type
+        if run(context=bpy.context, start_message="This time with active panel of type " + area_type + "!") != True:
+            fails += [area_type]
+        bpy.context.area.type = orig_area_type
+    print("\n\n\n" + ("+" * 200))
+    if len(fails) != 0:
+        print("For these C.area types at least one test failed:")
+        for area_type in fails:
+            print(area_type)
+    else:
+        print("Everything went right")
+    print("+" * 200 + "\n\n\n")

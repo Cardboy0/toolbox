@@ -58,6 +58,36 @@ https://blender.stackexchange.com/questions/51044/how-to-import-a-blender-python
 2. instead of writing something like "import yourScript", write yourScript = bpy.data.texts["yourScript.py"].as_module()
 3. It now works as if it had been imported
   
+## What area do you call these functions from?
+A big part of Blender logic is the context (`bpy.context` or often shortened to just `C`)    
+Did you know that that includes the type of window you're currently "inside" of? For instance, if you type `print(bpy.context.area.type)` in    
+- a blender console, you will see `'CONSOLE'`
+- a blender text editor, you will see `'TEXT_EDITOR'`
+- if you create a blender operator (often done in add-ons) with the code above, add a button to the "Object Properties" panel that calls that operator, and click it, you will see `'PROPERTIES'`     
+
+I'm telling you this information because, **depending on your current area type, some things might not work with your code**. Some (but only a few) of the functions in this repository even have warnings about this in their descriptions.      
+
+An example is my `select_objects` function: I ran into a situation where, after doing certain changes to scenes, I suddenly couldn't select an object when I had the area type `'PROPERTIES'` active. It turned out that bpy.context.view_layer somehow got messed up and took the value of a view_layer of another scene instead of the one that was currently active, and selecting objects depended on those view_layers being correct.    
+This problem did **not** appear if the area type was one of `CONSOLE`, `TEXT_EDITOR` or `VIEW_3D`, only with `'PROPERTIES'`
+From doing some testing I found that the best way to prevent those bugs is to simply change the context area type to one that works before you run your unstable code. It's actually fairly easy, you literally only need to change the `.type` property.    
+So for example:
+```
+old_area_type = C.area.type
+C.area.type = "CONSOLE"
+select_objects(x,y,z) # do your code
+C.area.type = old_area_type
+```
+
+Be aware however to not overdo this, as changing the area type very often might actually take some time to compute, although that's just a guess - I never actually tested its time efficiency.
+
+To end this, I found that the following area types **did not** lead to any problems in my test code:
+- `'CONSOLE'`
+- `'TEXT_EDITOR'`
+- `'VIEW_3D'` (maybe try the other types first if you run into problems, because this one *might* make everything in your code slower)
+
+The following area types **did** lead to problems:
+- `'PROPERTIES'`
+
 
 ## __Things starting with two underscores
 You will see that at some locations, my variables or function will start with two underscores (but not also end with two underscores, those are different, special "magic" functions or attributes):

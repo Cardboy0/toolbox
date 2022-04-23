@@ -25,6 +25,13 @@ def create_real_mesh_copy(context, obj, frame="CURRENT", apply_transforms=True, 
     -------
     bpy.types.Mesh
         The newly created mesh
+
+    Warnings
+    --------
+    - You might get wrong results if your context.area.type is not either "CONSOLE", "VIEW_3D" or "TEXT_EDITOR"\\
+        An example for a "bad" area type is "PROPERTIES", and you might encounter it when you're writing an add-on with an operator that gets called by clicking 
+        a button in the object properties panel.\\
+        Temporarily setting context.area.type="CONSOLE", calling this function and then setting it back to original is enough to make those bugs go away.
     """
 
     # frame stuff
