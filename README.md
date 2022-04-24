@@ -43,6 +43,13 @@ https://github.com/Cardboy0/toolbox
 (I also have a (decentely big) guide on scripting in Blender, ranging from basis to specific and advanced topics: https://docs.google.com/document/d/1Ph6HpkmEX9KWoPC6V1UVWJ1F37qj9NkIDNQRTP-uSII)
 
 
+# May I use this repository or parts of it in my own scripts?
+
+**Personal opinion:** Yes, go ham. If I didn't want people to use this stuff, I wouldn't have made it publicly available ;-)    
+But please try to always include my name (Cardboy0) and a link to this repository (https://github.com/Cardboy0/toolbox) in the stuff you copy.   
+
+Also, while completely optional, consider sending me a message that you're using some of my stuff. It just makes me happy and provides the recognition my parents never gave me :-)
+
 # testing
 - if you want to "test" the scripts in this repository - a.k.a. check if they work for you as intended - check out the **does_this_stuff_work_for_me** subfolder (there's another *readme* file inside).
 - if you think you can improve a function or class, you can also do the test stuff above to check if your edited code works as intended.
