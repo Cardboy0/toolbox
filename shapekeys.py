@@ -1,3 +1,5 @@
+# ##### BEGIN GPL LICENSE BLOCK #####
+#
 # Part of the "toolbox" repository
 # Copyright (C) 2022  Cardboy0 (https://twitter.com/cardboy0)
 
@@ -13,6 +15,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# ##### END GPL LICENSE BLOCK #####
 
 
 import bpy
