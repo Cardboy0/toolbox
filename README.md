@@ -50,10 +50,24 @@ But please try to always include my name (Cardboy0) and a link to this repositor
 
 Also, while completely optional, consider sending me a message that you're using some of my stuff. It just makes me happy and provides the recognition my parents never gave me :-)
 
+# How to download
+There are two main ways to download this repository:    
+
+**Option 1:** Visit https://github.com/Cardboy0/toolbox. Above the list of files, to the right, there should be a green button that reads "Code".
+Click on it to see a dropdown menu and press the "Download ZIP" button to download it all as a zip file.
+
+The method above will give you the most up-to-date version of this repository. If you want to download a certain previous version, do option 2 instead:
+
+**Option 2:** Visit https://github.com/Cardboy0/toolbox/releases (or https://github.com/Cardboy0/toolbox/tags for a more compressed view) to download a certain version of this repository, like *v1.0.0*    
+This might be the better choice for you because I sometimes make major changes to my files (like renaming, moving or deleting stuff, etc.) and you might come back to see that the newest version is nothing like the version you downloaded a few months ago.
+
+
+(I'm just gonna assume that you know what a zip file is and how to extract it, because really, how could you have gotten this far into coding and *not* know what a zip file is?) 
+
+
 # testing
 - if you want to "test" the scripts in this repository - a.k.a. check if they work for you as intended - check out the **does_this_stuff_work_for_me** subfolder (there's another *readme* file inside).
 - if you think you can improve a function or class, you can also do the test stuff above to check if your edited code works as intended.
-
 
 # more nerdy stuff
 Checkout [the other README](moreDetails.md) that explains specific stuff about this project in detail if you're confused about some things
