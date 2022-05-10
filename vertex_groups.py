@@ -262,8 +262,8 @@ class VGroupsWithModifiers():
 
     Note: When a method calls for a vertex group parameter, it always means you're supposed to give the name of the vertex group, not the vertex group object itself.
 
-    Warning: 
-
+    Warnings
+    ---------
     An important part of vertex groups is, aside from what weight a vertex has, obviously which vertices are even assigned to the vertex group.
     In certain scenarios, a vertex group altering modifier might assign every unassigned vertex with a weight of 0.
     This can later create problems for other modifiers who use that vertex group.
@@ -319,12 +319,6 @@ class VGroupsWithModifiers():
 
         Requirements: Both objects must have the same topology (simply: same number of vertices in viewport)  
 
-        Warning: 
-        - I did not test nor plan for what happens if your main object already has a vertex group with the name of the target vertex group.
-        You might get unexpected results.
-        - Be aware that edge cases exist where the new vertex group will assign every unassigned vertex with a weight of zero instead of leaving them unassigned.
-        This depends on certain topology-changing modifiers, like a geometry node modifier.
-
         Parameters
         ----------
         context : bpy.types.Context
@@ -341,6 +335,13 @@ class VGroupsWithModifiers():
         bpy.types.DataTransferModifier
             The created data transfer modifier that keeps the new vertex group up to date with the target vertex group.
         You can get the new vertex group by using the name of the target vertex group.
+
+        Warnings
+        -------- 
+        - I did not test nor plan for what happens if your main object already has a vertex group with the name of the target vertex group.
+        You might get unexpected results.
+        - Be aware that edge cases exist where the new vertex group will assign every unassigned vertex with a weight of zero instead of leaving them unassigned.
+        This depends on certain topology-changing modifiers, like a geometry node modifier.
         """
         mod_data_transfer = main_obj.modifiers.new(
             name='Keeps ' + vg_of_target + ' up to date with data from ' + target_obj.name, type='DATA_TRANSFER')

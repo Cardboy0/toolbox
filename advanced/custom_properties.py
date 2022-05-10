@@ -23,7 +23,7 @@ import bpy
 import rna_prop_ui
 
 # Deals with custom properties. Custom properties are special (but also kind of unstable and weird) properties of something Blender-related.
-# Because of their weird behaviour, I created a helper class that's supposed to decrease the weirdness you will encounter.
+# Because of their weird behavior, I created a helper class that's supposed to decrease the weirdness you will encounter.
 
 # To create one for a simple Object manually, select an object, go to the 'object properties' tab (not 'object data properties'!)
 # and you should find the 'Custom Properties' panel right at the bottom.
@@ -171,9 +171,13 @@ class CustomPropertyHandler():
                 return val
 
         def get_name(self):
+            """Returns the name of this custom property
+            """
             return self.__name
 
         def get_blend_obj(self):
+            """Returns some type of object this custom property belongs to.
+            """
             return self.__blend_obj
 
     class SimpleBool(_BasicProp):

@@ -72,6 +72,8 @@ class NodeGroupHandlerBasic():
     def connect_nodes(self, output_socket, input_socket):
         """Connects two sockets between two nodes. 
 
+        For cases where your nodes seemingly don't get connected but no error message appears, check out the warnings section of this description.
+
         Parameters
         ----------
         output : bpy.types.NodeSocket
