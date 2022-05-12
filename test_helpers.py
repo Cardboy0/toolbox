@@ -97,6 +97,7 @@ class TestHelper():
             Created object
         """
         self.switch_area()
+
         def raise_err():
             raise Exception(str(type) + " not a valid value.")
         possible_ops = {
@@ -120,14 +121,12 @@ class TestHelper():
         self.reset_area()
         return obj
 
-
     class ArmatureCreator():
         obj_armature: bpy.types.Object
         obj_monkey: bpy.types.Object
         bone_1: bpy.types.Bone
         bone_2: bpy.types.Bone
         bone_3: bpy.types.Bone
-
 
         def __init__(self) -> None:
             """Creates a simple armature object with three bones total.
@@ -137,10 +136,10 @@ class TestHelper():
             def create_bone(armature, factor):
                 bpy.ops.object.mode_set(mode='EDIT')
                 bone = armature.edit_bones.new(name="bone")  # edit_bones only works in edit mode
-                #bad stuff happens when you try to use that variable after switching back to object mode
+                # bad stuff happens when you try to use that variable after switching back to object mode
                 name = bone.name
                 bone.head = (1, factor * 1, factor * 1)
-                bone.tail = (factor * 2, factor * 2, factor * 2) 
+                bone.tail = (factor * 2, factor * 2, factor * 2)
                 bpy.ops.object.mode_set(mode='OBJECT')
                 return armature.bones.get(name)
             bpy.ops.mesh.primitive_monkey_add()
@@ -156,23 +155,22 @@ class TestHelper():
             self.obj_monkey = monkey
             self.obj_armature = obj_armature
 
-
         def move_bones(self):
             """Moves and rotates the bones to do what armatures usually do.
             """
             posebones = self.obj_armature.pose.bones
             # bpy.ops.object.mode_set(mode='EDIT')
             for bone in [self.bone_1, self.bone_2, self.bone_3]:
-                posebones[bone.name].rotation_mode = "XYZ" # for some reason that was quaternion by default for me
-            posebones[self.bone_1.name].location = (-1,-0.5,0)
-            posebones[self.bone_1.name].rotation_euler = (0.5,0.3,0.2)
-            posebones[self.bone_2.name].location = (1.2,0.9,10)
-            posebones[self.bone_2.name].rotation_euler=(9,9,9)
-            posebones[self.bone_3.name].location = (100,80,99)
-            posebones[self.bone_3.name].rotation_euler = (4,-4,0.01)
+                posebones[bone.name].rotation_mode = "XYZ"  # for some reason that was quaternion by default for me
+            posebones[self.bone_1.name].location = (-1, -0.5, 0)
+            posebones[self.bone_1.name].rotation_euler = (0.5, 0.3, 0.2)
+            posebones[self.bone_2.name].location = (1.2, 0.9, 10)
+            posebones[self.bone_2.name].rotation_euler = (9, 9, 9)
+            posebones[self.bone_3.name].location = (100, 80, 99)
+            posebones[self.bone_3.name].rotation_euler = (4, -4, 0.01)
             # bpy.ops.object.mode_set(mode='OBJECT')
 
-    def mess_around(self,switch_scenes=True, scenes_to_avoid=[]):
+    def mess_around(self, switch_scenes=True, scenes_to_avoid=[]):
         """If you generally just want to f*ck up your project to see if your functions still work when settings change.
         Currently includes:
         - Creating a new object (gets deleted again)
@@ -247,10 +245,11 @@ class TestHelper():
             Dont print an errormessage with some detail when objs are not the same?
         """
         self.switch_area()
+
         def error_message(messageStart="Comparison failed for", messageEnd=""):
             if mute == False:
                 print(messageStart + " objects " + obj1.name +
-                    " and " + obj2.name + " " + messageEnd)
+                      " and " + obj2.name + " " + messageEnd)
 
         obj1_mesh_copy = _create_real_mesh.create_real_mesh_copy(
             context=self.__context, obj=obj1, frame=frame, apply_transforms=apply_transforms_obj1)
@@ -272,7 +271,7 @@ class TestHelper():
             v2 = verts_obj2[vertIndex]
             if _coordinates_stuff.is_vector_close(vector1=v1, vector2=v2, ndigits=3) == False:
                 error_message(messageEnd="(Different vertices found:\nIndex=" +
-                            str(vertIndex) + "\nvert1 = " + str(v1) + "\nvert2 = " + str(v2))
+                              str(vertIndex) + "\nvert1 = " + str(v1) + "\nvert2 = " + str(v2))
                 self.reset_area()
                 return False
         self.reset_area()
@@ -305,14 +304,15 @@ class Timing:
         if text != "":
             text += ":\t"
 
-        # Get the position of the first digit that isnt 0
-        first_digit_not_zero = 0
-        time_to_test = time_to_print
-        while int(time_to_test) == 0:
-            first_digit_not_zero += 1
-            time_to_test = time_to_test * 10
-        if first_digit_not_zero > round_digits:
-            round_digits = first_digit_not_zero
+        if time_to_print != 0:
+            # Get the position of the first digit that isnt 0
+            first_digit_not_zero = 0
+            time_to_test = time_to_print
+            while int(time_to_test) == 0:
+                first_digit_not_zero += 1
+                time_to_test = time_to_test * 10
+            if first_digit_not_zero > round_digits:
+                round_digits = first_digit_not_zero
 
         print(text + str(round(time_to_print, round_digits)) + " seconds")
 
@@ -342,6 +342,3 @@ class Timing:
             cls.print_time(time_to_print=t, round_digits=print_digits,
                            text=function.__name__)
         return t
-
-
-
