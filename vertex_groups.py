@@ -154,6 +154,9 @@ def remove_verts_from_vertex_group(vertex_group, vert_indices="ALL", validate=Fa
 def get_verts_in_vertex_group(vertex_group):
     """Tells you which vertices are currently assigned to the given vertex group.
 
+    Not that efficient, using this on a mesh with 1 million vertices can take a whole second or more.
+    I'm not happy about that either.
+
     Parameters
     ----------
     vertex_group : bpy.types.VertexGroup
@@ -176,6 +179,16 @@ def get_verts_in_vertex_group(vertex_group):
             # That's at least twice as slow as this function, and with each added vertex group it would require more time. So don't do that.
         except:
             pass
+        # update to the comments above:
+        # when using bmeshes, vertex groups are part of the deform layer.
+        # Unlike with normal meshes, bverts will show you which vertex groups they're part of and use the indices of the vertex group as keys.
+        # However, it's still only possible to get the vertex groups from a single vertex, not the other way around.
+        # So, you would again have to check each vertex if it's part of the vertex group in question.
+        # https://devtalk.blender.org/t/manipulate-vertex-groups-via-bmesh/11192
+        # https://devtalk.blender.org/t/how-to-bmesh-select-vertex-group-and-delete-only-edges/11444
+        # https://blender.stackexchange.com/questions/75223/finding-vertices-in-a-vertex-group-using-blenders-python-api
+        # https://blender.stackexchange.com/questions/8075/checking-if-a-vertex-belongs-to-a-vertex-group-in-python
+
     return found_verts
 
 
