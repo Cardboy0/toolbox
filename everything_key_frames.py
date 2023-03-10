@@ -86,6 +86,6 @@ def create_key_frames_fast(fcurve, values):
             x.extend([key, value])
         values = x
 
-    fcurve.keyframe_points.add(count=len(values) / 2)
+    fcurve.keyframe_points.add(count=len(values) // 2) # two forward slashes because count mustn't be a float
     fcurve.keyframe_points.foreach_set("co", values)
     fcurve.update()
