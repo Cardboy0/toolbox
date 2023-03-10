@@ -2240,6 +2240,7 @@ def run(context=None, start_message=""):
 
         obj_monkey = test_helper.create_subdiv_obj(subdivisions=1, type="MONKEY")
         mod_geo_node = obj_monkey.modifiers.new(name="Geometry Node modifier", type='NODES')
+        o.node.new_geometry_node_group_assign()
         random_node_group = bpy.data.node_groups.new(name='Geometry Nodes Test', type='GeometryNodeTree')
         for source in (None, mod_geo_node, random_node_group, mod_geo_node.node_group.name):
             nhelper = test_function(lambda: node_helper.GeometryNodesModifierHandler(source=source, reset=False))
