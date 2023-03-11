@@ -2296,13 +2296,13 @@ def run(context=None, start_message=""):
             print("Using new node group for modifier failed")
             return False
 
-        node_transfer_attr = test_function(lambda: nhelper_new.add_node(node_type='GeometryNodeAttributeTransfer'))
-        input_socket = test_function(lambda: node_helper.GeometryNodesModifierHandler.get_input_socket_by_identifier(node=node_transfer_attr, socket_identifier='Attribute_002'))
-        for i in range(len(node_transfer_attr.inputs)):
-            if i == 3 and node_transfer_attr.inputs[i] != input_socket:
+        node_sample_index = test_function(lambda: nhelper_new.add_node(node_type='GeometryNodeSampleIndex'))
+        input_socket = test_function(lambda: node_helper.GeometryNodesModifierHandler.get_input_socket_by_identifier(node=node_sample_index, socket_identifier='Value_Vector'))
+        for i in range(len(node_sample_index.inputs)):
+            if i == 3 and node_sample_index.inputs[i] != input_socket:
                 print("Wrong input socket from identifier")
                 return False
-            if i != 3 and node_transfer_attr.inputs[i] == input_socket:
+            if i != 3 and node_sample_index.inputs[i] == input_socket:
                 print("Wrong input socket from identifier")
                 return False
         node_capture_attr = test_function(lambda: nhelper_new.add_node(node_type='GeometryNodeCaptureAttribute'))

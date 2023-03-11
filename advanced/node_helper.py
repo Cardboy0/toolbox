@@ -86,10 +86,11 @@ class NodeGroupHandlerBasic():
         Warning
         -------
         Unlike usual, multiple sockets with the same name can exist, even on default nodes.\\
-        A Transfer Attribute Node (geometry node) appears to only have one Attribute input, but it actually has five, all with the same name,
-        which means typing my_node.inputs["Attribute"] doesn't work, you would actually need to use indices (like my_node.inputs[3])\\
+        A 'Sample Index' Node (geometry node) appears to only have one 'Value' input, but it actually has five different ones - although all with the same name,
+        which means typing my_node.inputs["Value"] doesn't work, you would actually need to use indices (like my_node.inputs[3])\\
         The only way to differentiate between them is their .identifier value.\\
-        This will start at "Attribute", then "Attribute_001", "Attribute_002" etc.
+        In this 'Sample Index'  case, you would then find the following 5 DIFFERENT identifiers:\\
+        'Value_Float', 'Value_Int', 'Value_Vector', 'Value_Color' and 'Value_Bool'
         """
         # https://blender.stackexchange.com/questions/5413/how-to-connect-nodes-to-node-group-inputs-and-outputs-in-python
         self.node_group.links.new(input=input_socket, output=output_socket)
