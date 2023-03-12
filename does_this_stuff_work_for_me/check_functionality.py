@@ -565,7 +565,16 @@ def run(context=None, start_message=""):
     # Collections.py
 
     def test_create_collection():
-        # Try to create this:
+        # Attention, Collections.py needs manual supervision
+        # To find the scene where the new collections have been added to type the following code snippet into the console:
+        # for scene in D.scenes:
+        #    if scene.collection.children.find("coll_apple")!=-1:
+        #        print(scene.name)
+        # 
+        # The script also deletes these collections if they should already exist from a previous test run
+        #
+        #
+        # This function tries to create this:
         # master-collection (of scene)
         # ----coll_apple
         # --------obj2
@@ -582,9 +591,9 @@ def run(context=None, start_message=""):
         # --------obj2
         # --------coll_blueberry
         #
-        # obj1, obj2 and coll_blueberry present multiple times because you can link collections and objects to more than one collection
+        # obj1, obj2 and coll_blueberry are present multiple times because you can link collections and objects to more than one collection
         #
-        # For testing, we only look at the parents an object/collection has.
+        # For automated testing, we only look at the parents an object/collection has.
         # From the sketch above, we can assume the following facts for testing:
         # coll_apple has 1 parent: master-collection
         # coll_banana has 1 parent: master-collection
@@ -623,7 +632,7 @@ def run(context=None, start_message=""):
         # create two new scenes
         bpy.ops.scene.new(type='NEW')
         bpy.ops.scene.new(type='NEW')
-        test_helper.mess_around(switch_scenes=True)
+        test_helper.mess_around(switch_scenes=True, scenes_to_avoid=orig_scene)
         # we aren't even IN the original scene when we do this stuff
         # that's how good this test is
         bpy.ops.mesh.primitive_ico_sphere_add()
@@ -682,24 +691,10 @@ def run(context=None, start_message=""):
 
         if set(obj2.users_collection) != set([coll_apple, coll_cherry, coll_dewberry, coll_babaco]):
             return False
+        
+        if len(orig_scene.collection.children_recursive) != 8:
+            return False
 
-        # print("Attention, Collections.py needs manual supervision:")
-        # print("(The script also deletes these collections if they should already exist from a previous test run)")
-        # print("This is the correct result that you should appear in scene '" +
-        #       origScene.name+"':")
-        # text = [
-        #     "master-collection (of scene)",
-        #     "----coll_1",
-        #     "----coll_2",
-        #     "--------coll_2_1",
-        #     "--------coll_2_2",
-        #     "------------ obj1",
-        #     "----coll_3",
-        #     "--------obj1",
-        #     "----coll_4",
-        #     "--------coll_2_1"]
-        # for str in text:
-        #     print(str)
         return True
 
     # tagVertices.py
