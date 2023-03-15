@@ -8,7 +8,7 @@ In that case you can use the .py script in this specific subfolder to do a quick
 There are two ways:  
 #1: Running the test script directly:
 1. Create a new empty Blender Project **inside this subfolder**
-2. Open the **check_functionality.py** script in that project.
+2. Open the **run_tests.py** script in that project.
 3. Run it
 4. Check the console for any print statements or raised exceptions.
   
