@@ -20,8 +20,8 @@
 
 
 
-# Really ugly script to test if the other functions and classes in this repository still work.
-# obviously we can't cover every corner case, so take the results with a grain of salt.
+# Really ugly, messy script to test if the other functions and classes in this repository still work.
+# obviously we can't cover every edge case, so take the results with a grain of salt.
 # Additionally: this particular script uses bpy.ops. operators often - this is on purpose, because it's for testing. In your own scripts try to NOT use bpy.ops however.
 
 # I apologize for the stroke you will have when trying to understand some of the logic I did here due to lacking documentation at points.
