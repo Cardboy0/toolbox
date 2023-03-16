@@ -68,7 +68,7 @@ def move_modifer_to_position_in_stack(context, modifier, position):
 class ButtonPresser():
 
     @classmethod
-    def try_to_bind(clss, modifier):
+    def try_to_bind(cls, modifier):
         """A few modifiers require you to press a *bind* button. Doing that from within Python is harder than you think
         because there are like a dozen of things that can go wrong, which is why I created this function to do it instead.
 
@@ -117,7 +117,7 @@ class ButtonPresser():
 
         obj = modifier.id_data  # the object the modifier belongs to
 
-        temp_scene = clss.__temp_scene_create(obj)
+        temp_scene = cls.__temp_scene_create(obj)
         # binding an object that is in no scene doesn't work, so we temporarily add it to a new scene if it doesn't have any.
 
         override = {'object': obj,
@@ -152,12 +152,12 @@ class ButtonPresser():
 
         if temp_scene != None:
             # created at the beginning and no longer needed, so we remove it again
-            clss.__temp_scene_delete(temp_scene)
+            cls.__temp_scene_delete(temp_scene)
 
         return is_bound
 
     @classmethod
-    def data_transfer_button(clss, data_transfer_mod):
+    def data_transfer_button(cls, data_transfer_mod):
         """Used for Data Transfer modifiers. 
         Presses its "Generate Data Layers" button.
 
@@ -168,7 +168,7 @@ class ButtonPresser():
         """
         # using bpy ops is always best done with a context override
         obj = data_transfer_mod.id_data
-        temp_scene = clss.__temp_scene_create(obj)
+        temp_scene = cls.__temp_scene_create(obj)
         override = {
             'object': obj,
             'active_object': obj,
@@ -177,10 +177,10 @@ class ButtonPresser():
         bpy.ops.object.datalayout_transfer(override, modifier=data_transfer_mod.name)
         # This is the same as pressing the "Generate Data Layers" button of the modifier.
         if temp_scene!=None:
-            clss.__temp_scene_delete(temp_scene)
+            cls.__temp_scene_delete(temp_scene)
 
     @classmethod
-    def __temp_scene_create(clss, obj):
+    def __temp_scene_create(cls, obj):
         if len(obj.users_scene) > 0:
             return None
         else:
@@ -189,5 +189,5 @@ class ButtonPresser():
             return new_scene
     
     @classmethod
-    def __temp_scene_delete(clss, temp_scene):
+    def __temp_scene_delete(cls, temp_scene):
         bpy.data.scenes.remove(temp_scene)

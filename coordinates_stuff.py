@@ -153,7 +153,7 @@ class RotationHandling():
     __list_for_axis_angles = [0, 0, 0, 0]
 
     @classmethod
-    def get_rotation_type(clss, rotation_vector):
+    def get_rotation_type(cls, rotation_vector):
         """Gets the rotation type of a vector, meaning one of the values an objects rotation_mode accepts.
         Notice that the actual contents (the number values) of the rotationVector don't matter.
 
@@ -190,14 +190,14 @@ class RotationHandling():
 
         v_type = type(rotation_vector)
         if v_type == mathutils.Quaternion:
-            return clss.rot_type_quaternion
+            return cls.rot_type_quaternion
         elif v_type == mathutils.Euler:
             return rotation_vector.order
         elif len(rotation_vector) == 4:
             # luckily this covers both the case where it's a tuple/list or a bpy_float array, because the latter also only has a length of 4.
-            return clss.rot_type_axis_angle
+            return cls.rot_type_axis_angle
         elif len(rotation_vector) == 2 and type(rotation_vector[0]) == mathutils.Vector and is_number(rotation_vector[1]) == True:
-            return clss.rot_type_axis_angle
+            return cls.rot_type_axis_angle
         else:
             try:
                 string_representation = str(rotation_vector)

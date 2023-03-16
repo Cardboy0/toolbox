@@ -96,7 +96,7 @@ class NodeGroupHandlerBasic():
         self.node_group.links.new(input=input_socket, output=output_socket)
 
     @classmethod
-    def get_input_socket_by_identifier(clss, node, socket_identifier) -> bpy.types.NodeSocket:
+    def get_input_socket_by_identifier(cls, node, socket_identifier) -> bpy.types.NodeSocket:
         """
         Gets the input socket of a node from its .identifier value instead of name.\\
         Required because some nodes can have multiple sockets with the same name. To differentiate between them,
@@ -115,10 +115,10 @@ class NodeGroupHandlerBasic():
         bpy.types.NodeSocket
             Input socket object
         """
-        return clss.__get_socket_by_identifier(node=node, socket_identifier=socket_identifier, input=True)
+        return cls.__get_socket_by_identifier(node=node, socket_identifier=socket_identifier, input=True)
 
     @classmethod
-    def get_output_socket_by_identifier(clss, node, socket_identifier) -> bpy.types.NodeSocket:
+    def get_output_socket_by_identifier(cls, node, socket_identifier) -> bpy.types.NodeSocket:
         """
         Gets the output socket of a node from its .identifier value instead of name.\\
         Required because some nodes can have multiple sockets with the same name. To differentiate between them,
@@ -137,10 +137,10 @@ class NodeGroupHandlerBasic():
         bpy.types.NodeSocket
             Output socket object
         """
-        return clss.__get_socket_by_identifier(node=node, socket_identifier=socket_identifier, input=False)
+        return cls.__get_socket_by_identifier(node=node, socket_identifier=socket_identifier, input=False)
 
     @classmethod
-    def __get_socket_by_identifier(clss, node, socket_identifier, input=True):
+    def __get_socket_by_identifier(cls, node, socket_identifier, input=True):
         if input == True:
             sockets = node.inputs
         else:

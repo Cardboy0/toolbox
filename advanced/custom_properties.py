@@ -50,7 +50,7 @@ class CustomPropertyHandler():
     """
 
     @classmethod
-    def just_set_val(clss, blend_obj, prop_name, value, test_for_success=False):
+    def just_set_val(cls, blend_obj, prop_name, value, test_for_success=False):
         """Just (try to) add a new custom property with a value of whatever type you want.
 
         Note that you can assign more than just numbers or strings to custom properties, exotic stuff like Meshes, Lights, Objects etc. work too.
@@ -86,7 +86,7 @@ class CustomPropertyHandler():
             return blend_obj[prop_name] == value
 
     @classmethod
-    def just_get_val(clss, blend_obj, prop_name):
+    def just_get_val(cls, blend_obj, prop_name):
         """Get the current value of a custom property.
         Literally just uses: return blend_obj[prop_name]
 
@@ -104,7 +104,7 @@ class CustomPropertyHandler():
         return blend_obj[prop_name]
 
     @classmethod
-    def change_description(clss, blend_obj, prop_name, description):
+    def change_description(cls, blend_obj, prop_name, description):
         """Changes the description of a custom property.
 
         Parameters
@@ -138,8 +138,8 @@ class CustomPropertyHandler():
 
         # FIXME: Disabled because neither properly implemented nor tested:
         # @classmethod
-        # def from_existing(clss, obj, name):
-        #     new = clss(obj=obj, name=name, prop_type=None)
+        # def from_existing(cls, obj, name):
+        #     new = cls(obj=obj, name=name, prop_type=None)
         #     new._reset_prop_manager()
         #     new.type = type(new.get_value())
         #     return new

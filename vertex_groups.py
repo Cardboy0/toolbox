@@ -293,7 +293,7 @@ class VGroupsWithModifiers():
     #       Using them directly only adds potential problems.
 
     @classmethod
-    def vertex_weight_uniform(clss, obj, vg_name: str, only_assigned=False, weight=1):
+    def vertex_weight_uniform(cls, obj, vg_name: str, only_assigned=False, weight=1):
         """Adds a Vertex Weight Mix modifier that assigns every vertex the specified weight. 
         Can also include vertices that haven't been assigned to the vertex group yet.
 
@@ -326,7 +326,7 @@ class VGroupsWithModifiers():
         return mod_vweight_mix
 
     @classmethod
-    def mimic_external_vertex_group(clss, context, main_obj, target_obj, vg_of_target: str):
+    def mimic_external_vertex_group(cls, context, main_obj, target_obj, vg_of_target: str):
         """Adds a Data Transfer Modifier and a new vertex group to the main object. 
         The new vertex group will mimic the weights of the chosen vertex group of the target object and have the same name.
 
@@ -377,7 +377,7 @@ class VGroupsWithModifiers():
         return mod_data_transfer
 
     @classmethod
-    def mimic_vertex_group(clss, obj, vg_to_duplicate: str):
+    def mimic_vertex_group(cls, obj, vg_to_duplicate: str):
         """ Basically duplicates a vertex group by using a Vertex Weight Mix Modifier.
 
         If you want the same but for a vertex group from another object, use the mimic_external_vertex_group() method.
@@ -406,7 +406,7 @@ class VGroupsWithModifiers():
         return {"mod": mod_vweight_mix, "new vg": vg_copy}
 
     @classmethod
-    def remove_0_weights(clss, obj, vg_name: str):
+    def remove_0_weights(cls, obj, vg_name: str):
         """Removes/unassigns any vertex with a weight of 0 from a vertex group using a Vertex Weight Edit Modifier.
 
         Parameters

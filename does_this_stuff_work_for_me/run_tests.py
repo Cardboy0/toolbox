@@ -151,16 +151,16 @@ def run(context=None, start_message=""):
         }
 
         @classmethod
-        def get_all_keys(clss) -> set:
-            first_key_set = set(clss.locations.keys())
-            second_key_set = set(clss.create_functions.keys())
+        def get_all_keys(cls) -> set:
+            first_key_set = set(cls.locations.keys())
+            second_key_set = set(cls.create_functions.keys())
             if first_key_set != second_key_set:
                 raise Exception("We have wrong attributes!")
             return first_key_set
 
         @classmethod
-        def get_all_creation_functions(clss):
-            all_functions = list(clss.create_functions.values())
+        def get_all_creation_functions(cls):
+            all_functions = list(cls.create_functions.values())
             # that's gonna be a multidimensional list, like so: [ [x,y],  [1,2,3,4], ]
             # convert it to one dimensional:
             # weird, but it seems to work. Got it from here: https://stackoverflow.com/questions/2961983/convert-multi-dimensional-list-to-a-1d-list-in-python
@@ -171,7 +171,7 @@ def run(context=None, start_message=""):
             return one_dimensional
 
         @classmethod
-        def create_image(clss):
+        def create_image(cls):
             # Image creation requires us to first create a new image and then assign that to an empty object
             # We can't use bpy.ops.object.load_reference_image(), because that requires us to choose an image file from our drive
             simple_image = D.images.new(
