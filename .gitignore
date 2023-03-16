@@ -8,3 +8,9 @@ does_this_stuff_work_for_me/*
 
 !does_this_stuff_work_for_me/readme.md
 !does_this_stuff_work_for_me/run_tests.py
+!does_this_stuff_work_for_me/test_toolbox_as_addon
+does_this_stuff_work_for_me/test_toolbox_as_addon/*
+!does_this_stuff_work_for_me/test_toolbox_as_addon/__init__.py
+!does_this_stuff_work_for_me/test_toolbox_as_addon/toolbox_to_test
+does_this_stuff_work_for_me/test_toolbox_as_addon/toolbox_to_test/*
+!does_this_stuff_work_for_me/test_toolbox_as_addon/toolbox_to_test/.placeholder
